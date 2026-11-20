@@ -94,6 +94,16 @@
       "category": "public.app-category.games",
       "icon": "build/icon.png",
       "artifactName": "Wylvarion-Launcher-${version}-${arch}.${ext}"
+    },
+    "appx": {
+      "applicationId": "WylvarionLauncher",
+      "displayName": "Wylvarion Launcher",
+      "backgroundColor": "#0b0913",
+      "languages": [
+        "cs-CZ",
+        "en-US"
+      ],
+      "showNameOnTiles": true
     }
   }
 }

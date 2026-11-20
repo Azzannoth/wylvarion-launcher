@@ -6,6 +6,8 @@ const os = require('os');
 
 function defaultRoot() {
   const home = os.homedir();
+  // Verze z Microsoft Storu (MSIX) má AppData přesměrované do balíčku, proto složka v profilu uživatele.
+  if (process.windowsStore) return path.join(home, '.wylvarion');
   if (process.platform === 'win32') return path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), '.wylvarion');
   if (process.platform === 'darwin') return path.join(home, 'Library', 'Application Support', 'wylvarion');
   return path.join(home, '.wylvarion');

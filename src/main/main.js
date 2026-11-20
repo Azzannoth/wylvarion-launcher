@@ -401,7 +401,8 @@ function setupIpc() {
 }
 
 function setupUpdater() {
-  if (!app.isPackaged) return;
+  // Verzi z Microsoft Storu aktualizuje Store sám.
+  if (!app.isPackaged || process.windowsStore) return;
   let autoUpdater;
   try {
     autoUpdater = require('electron-updater').autoUpdater;
