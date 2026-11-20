@@ -103,7 +103,10 @@
         "cs-CZ",
         "en-US"
       ],
-      "showNameOnTiles": true
+      "showNameOnTiles": true,
+      "identityName": "Meralin.WylvarionLauncher",
+      "publisher": "CN=DBC83268-51EC-4EDF-9B5C-6F10440659E3",
+      "publisherDisplayName": "Meralin"
     }
   }
 }
