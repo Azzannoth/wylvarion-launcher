@@ -1,0 +1,437 @@
+'use strict';
+// Hlavní proces Wylvarion Launcheru.
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const crypto = require('crypto');
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+
+const store = require('./store');
+const auth = require('./core/auth');
+const mc = require('./core/minecraft');
+const mods = require('./core/mods');
+const java = require('./core/java');
+const { buildCommand, launch, redact } = require('./core/launch');
+const { ping } = require('./core/status');
+const { getJson } = require('./core/http');
+const { defaultRoot, layout } = require('./core/paths');
+
+let win = null;
+let config = null;
+let settings = null;
+let gameProcess = null;
+let busy = false;
+
+const LOCAL_CONFIG = path.join(__dirname, '..', '..', 'config', 'launcher.json');
+
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+}
+app.on('second-instance', () => {
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+  }
+});
+
+function send(channel, data) {
+  if (win && !win.isDestroyed()) win.webContents.send(channel, data);
+}
+
+function progress(p) {
+  send('progress', p);
+}
+
+function dirs() {
+  return layout(settings.root || defaultRoot());
+}
+
+function recommendedMemory() {
+  const totalMb = Math.round(os.totalmem() / 1024 / 1024);
+  if (totalMb >= 16000) return 6144;
+  if (totalMb >= 12000) return 4096;
+  if (totalMb >= 8000) return 3072;
+  return 2048;
+}
+
+async function loadConfig() {
+  const local = JSON.parse(fs.readFileSync(LOCAL_CONFIG, 'utf8'));
+  config = local;
+  try {
+    const remote = await getJson(local.remoteConfigUrl, { timeout: 8000 });
+    // Vzdálená konfigurace (z webu) může přepsat mody, verzi hry, novinky atd.
+    const rm = remote.microsoft || {};
+    config = {
+      ...local,
+      ...remote,
+      mods: Array.isArray(remote.mods) && remote.mods.length ? remote.mods : local.mods,
+      microsoft: { ...local.microsoft, ...(rm.clientId ? { clientId: rm.clientId } : {}), ...(rm.redirectUri ? { redirectUri: rm.redirectUri } : {}) },
+      server: { ...local.server, ...(remote.server || {}) },
+      links: { ...local.links, ...(remote.links || {}) },
+      shaders: { ...local.shaders, ...(remote.shaders || {}) }
+    };
+  } catch {
+    /* web nedostupný – použijeme vestavěnou konfiguraci */
+  }
+  return config;
+}
+
+function publicAccount(acc) {
+  if (!acc) return null;
+  return { name: acc.name, uuid: acc.uuid, skin: acc.skin };
+}
+
+async function validAccount() {
+  let acc = store.loadAccount();
+  if (!acc) throw Object.assign(new Error('Nejdřív se přihlas.'), { code: 'LOGIN' });
+  if (acc.expiresAt && acc.expiresAt - Date.now() > 5 * 60 * 1000) return acc;
+  if (!config.microsoft.clientId) throw new Error('Launcher nemá nastavené Microsoft přihlášení (clientId).');
+  try {
+    const ms = await auth.refresh(config.microsoft.clientId, acc.refreshToken);
+    acc = await auth.fromMicrosoft(ms);
+    store.saveAccount(acc);
+    send('account', publicAccount(acc));
+    return acc;
+  } catch (e) {
+    store.clearAccount();
+    send('account', null);
+    throw Object.assign(new Error('Přihlášení vypršelo, přihlas se prosím znovu.'), { code: 'LOGIN' });
+  }
+}
+
+function loginWindow(url, redirectUri) {
+  return new Promise((resolve, reject) => {
+    const w = new BrowserWindow({
+      width: 520,
+      height: 720,
+      parent: win,
+      modal: true,
+      title: 'Přihlášení Microsoft',
+      autoHideMenuBar: true,
+      webPreferences: { partition: `login-${Date.now()}` }
+    });
+    let finished = false;
+    const check = (target) => {
+      if (!target || !target.startsWith(redirectUri)) return false;
+      finished = true;
+      const u = new URL(target);
+      const code = u.searchParams.get('code');
+      const err = u.searchParams.get('error_description') || u.searchParams.get('error');
+      w.close();
+      code ? resolve({ code, state: u.searchParams.get('state') }) : reject(new Error(err || 'Přihlášení bylo zrušeno.'));
+      return true;
+    };
+    w.webContents.on('will-redirect', (e, target) => {
+      if (check(target)) e.preventDefault();
+    });
+    w.webContents.on('will-navigate', (e, target) => {
+      if (check(target)) e.preventDefault();
+    });
+    w.webContents.on('did-navigate', (e, target) => check(target));
+    w.on('closed', () => {
+      if (!finished) reject(new Error('Přihlášení bylo zrušeno.'));
+    });
+    w.loadURL(url);
+  });
+}
+
+async function selectedModList() {
+  const opt = settings.optionalMods || {};
+  return (config.mods || []).filter((m) => m.required || (m.id in opt ? opt[m.id] : m.default !== false));
+}
+
+function shaderChoice() {
+  const preset = settings.shaderPreset || 'auto';
+  if (preset === 'off') return null;
+  const tier = preset === 'auto' ? mods.gpuTier(app._gpuInfo) : preset;
+  const s = (config.shaders || {})[tier];
+  return s ? s.id : null;
+}
+
+async function play() {
+  if (busy) return;
+  if (gameProcess) throw new Error('Hra už běží.');
+  busy = true;
+  const d = dirs();
+  try {
+    const acc = await validAccount();
+    progress({ stage: 'start', text: 'Připravuji hru…', done: 0, total: 1 });
+
+    const installed = await mc.install(d, { mcVersion: config.minecraft, fabricLoader: config.fabricLoader }, progress);
+
+    progress({ stage: 'mods', text: 'Kontroluji mody…', done: 0, total: 1 });
+    try {
+      const { files, missing } = await mods.resolve(await selectedModList(), config.minecraft);
+      await mods.sync(d.mods, files, progress);
+      if (missing.length) send('notice', `Některé mody zatím nejsou pro ${config.minecraft}: ${missing.map((m) => m.name).join(', ')}`);
+    } catch (e) {
+      // Bez internetu spustíme s mody, které už jsou stažené.
+      send('notice', 'Mody se nepodařilo zkontrolovat, spouštím s uloženými.');
+    }
+
+    const shader = shaderChoice();
+    if (shader !== settings.appliedShader) {
+      try {
+        await mods.applyShader(d, shader, config.minecraft);
+        settings.appliedShader = shader;
+        store.saveSettings(settings);
+      } catch (e) {
+        send('notice', `Shader se nepodařilo nastavit: ${e.message}`);
+      }
+    }
+
+    const component = (installed.vanilla.javaVersion && installed.vanilla.javaVersion.component) || 'java-runtime-epsilon';
+    const javaPath = await java.ensureJava(d.runtime, component, progress);
+
+    const cmd = buildCommand({
+      install: installed,
+      dirs: d,
+      account: { ...acc, clientId: config.microsoft.clientId },
+      server: config.server,
+      memoryMb: settings.memoryMb || recommendedMemory(),
+      launcherVersion: app.getVersion(),
+      width: settings.width,
+      height: settings.height
+    });
+
+    fs.mkdirSync(d.logs, { recursive: true });
+    const logFile = path.join(d.logs, 'launcher-last.log');
+    const log = fs.createWriteStream(logFile);
+    log.write(`[Wylvarion Launcher ${app.getVersion()}] ${new Date().toISOString()}\n${javaPath} ${redact(cmd.args, acc.accessToken).join(' ')}\n\n`);
+
+    progress({ stage: 'launch', text: 'Spouštím Minecraft…', done: 1, total: 1 });
+    gameProcess = launch(javaPath, cmd, d, (line) => {
+      log.write(line);
+      send('game-log', line);
+    });
+    const started = Date.now();
+    gameProcess.on('spawn', () => {
+      send('game-state', { running: true });
+      setTimeout(() => {
+        if (gameProcess && settings.afterLaunch === 'hide' && win && !win.isDestroyed()) win.hide();
+        if (gameProcess && settings.afterLaunch === 'close') app.quit();
+      }, 4000);
+    });
+    gameProcess.on('error', (e) => {
+      send('notice', `Hru se nepodařilo spustit: ${e.message}`);
+    });
+    gameProcess.on('exit', (code) => {
+      log.end();
+      gameProcess = null;
+      send('game-state', { running: false, code, playedMs: Date.now() - started, logFile });
+      if (win && !win.isDestroyed()) {
+        win.show();
+        win.focus();
+      }
+    });
+    return { ok: true };
+  } finally {
+    busy = false;
+  }
+}
+
+function createWindow() {
+  win = new BrowserWindow({
+    width: 1180,
+    height: 720,
+    minWidth: 980,
+    minHeight: 620,
+    frame: false,
+    backgroundColor: '#0b0913',
+    show: false,
+    title: 'Wylvarion Launcher',
+    icon: path.join(__dirname, '..', '..', 'build', 'icon.png'),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
+    }
+  });
+  win.once('ready-to-show', () => win.show());
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https:\/\//.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  win.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+}
+
+function setupIpc() {
+  ipcMain.handle('state', async () => ({
+    version: app.getVersion(),
+    platform: process.platform,
+    account: publicAccount(store.loadAccount()),
+    settings: { ...settings, root: settings.root || defaultRoot(), memoryMb: settings.memoryMb || recommendedMemory() },
+    totalMemoryMb: Math.round(os.totalmem() / 1024 / 1024),
+    recommendedMemoryMb: recommendedMemory(),
+    gpuTier: mods.gpuTier(app._gpuInfo),
+    config: {
+      server: config.server,
+      minecraft: config.minecraft,
+      mods: config.mods,
+      shaders: config.shaders,
+      links: config.links,
+      news: config.news || [],
+      loginReady: Boolean(config.microsoft.clientId)
+    },
+    running: Boolean(gameProcess)
+  }));
+
+  ipcMain.handle('login', async () => {
+    if (!config.microsoft.clientId) throw new Error('Microsoft přihlášení zatím není nastavené. Správce serveru musí doplnit clientId.');
+    const { verifier, challenge } = auth.pkce();
+    const state = crypto.randomBytes(12).toString('hex');
+    const url = auth.authorizeUrl(config.microsoft.clientId, config.microsoft.redirectUri, challenge, state);
+    const res = await loginWindow(url, config.microsoft.redirectUri);
+    if (res.state !== state) throw new Error('Neplatná odpověď přihlášení.');
+    progress({ stage: 'login', text: 'Ověřuji účet…', done: 0, total: 1 });
+    const ms = await auth.exchangeCode(config.microsoft.clientId, config.microsoft.redirectUri, res.code, verifier);
+    const acc = await auth.fromMicrosoft(ms);
+    store.saveAccount(acc);
+    progress({ stage: 'idle', text: '', done: 1, total: 1 });
+    return publicAccount(acc);
+  });
+
+  ipcMain.handle('skin', async () => {
+    const acc = store.loadAccount();
+    if (!acc || !acc.skin || !acc.skin.url) return null;
+    try {
+      const res = await require('./core/http').request(acc.skin.url.replace(/^http:/, 'https:'));
+      if (!res.ok) return null;
+      const buf = Buffer.from(await res.arrayBuffer());
+      return { url: `data:image/png;base64,${buf.toString('base64')}`, variant: acc.skin.variant };
+    } catch {
+      return null;
+    }
+  });
+
+  ipcMain.handle('logout', () => {
+    store.clearAccount();
+    return true;
+  });
+
+  ipcMain.handle('play', async () => {
+    try {
+      return await play();
+    } catch (e) {
+      progress({ stage: 'error', text: e.message, done: 0, total: 1 });
+      return { ok: false, error: e.message, code: e.code };
+    }
+  });
+
+  ipcMain.handle('status', async () => {
+    try {
+      return await ping(config.server.host, config.server.port);
+    } catch (e) {
+      return { online: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('settings:set', (e, patch) => {
+    const allowedKeys = ['memoryMb', 'shaderPreset', 'optionalMods', 'afterLaunch', 'width', 'height', 'root', 'firstRunDone'];
+    for (const k of allowedKeys) if (k in patch) settings[k] = patch[k];
+    store.saveSettings(settings);
+    return settings;
+  });
+
+  ipcMain.handle('root:choose', async () => {
+    const r = await dialog.showOpenDialog(win, { title: 'Vyber složku pro hru', properties: ['openDirectory', 'createDirectory'] });
+    if (r.canceled || !r.filePaths[0]) return null;
+    settings.root = r.filePaths[0];
+    store.saveSettings(settings);
+    return settings.root;
+  });
+
+  ipcMain.handle('mods:custom', async () => mods.customMods(dirs().mods));
+
+  ipcMain.handle('mods:addJar', async () => {
+    const r = await dialog.showOpenDialog(win, { title: 'Přidat vlastní mod', filters: [{ name: 'Fabric mod', extensions: ['jar'] }], properties: ['openFile', 'multiSelections'] });
+    if (r.canceled) return mods.customMods(dirs().mods);
+    fs.mkdirSync(dirs().mods, { recursive: true });
+    for (const f of r.filePaths) fs.copyFileSync(f, path.join(dirs().mods, path.basename(f)));
+    return mods.customMods(dirs().mods);
+  });
+
+  ipcMain.handle('mods:removeJar', async (e, name) => {
+    if (!/^[^/\\]+\.jar(\.disabled)?$/i.test(name)) throw new Error('Neplatný název souboru.');
+    fs.rmSync(path.join(dirs().mods, name), { force: true });
+    return mods.customMods(dirs().mods);
+  });
+
+  ipcMain.handle('mods:search', async (e, query) => mods.search(String(query || '').slice(0, 80), config.minecraft));
+
+  ipcMain.handle('mods:addModrinth', async (e, id) => {
+    const v = await mods.latestVersion(id, config.minecraft, ['fabric']);
+    if (!v) throw new Error(`Mod není dostupný pro Minecraft ${config.minecraft}.`);
+    const f = v.files.find((x) => x.primary) || v.files[0];
+    const { download } = require('./core/http');
+    await download(f.url, path.join(dirs().mods, f.filename), { sha1: f.hashes && f.hashes.sha1, size: f.size });
+    return mods.customMods(dirs().mods);
+  });
+
+  ipcMain.handle('open', (e, what) => {
+    const d = dirs();
+    const map = { game: d.game, mods: d.mods, logs: d.logs, screenshots: path.join(d.game, 'screenshots'), root: d.root };
+    if (map[what]) {
+      fs.mkdirSync(map[what], { recursive: true });
+      shell.openPath(map[what]);
+    }
+  });
+
+  ipcMain.handle('external', (e, url) => {
+    if (/^https:\/\//.test(url)) shell.openExternal(url);
+  });
+
+  ipcMain.handle('window', (e, action) => {
+    if (!win) return;
+    if (action === 'min') win.minimize();
+    else if (action === 'max') win.isMaximized() ? win.unmaximize() : win.maximize();
+    else if (action === 'close') win.close();
+  });
+
+  ipcMain.handle('update:install', () => {
+    try {
+      require('electron-updater').autoUpdater.quitAndInstall();
+    } catch {
+      /* aktualizace není připravená */
+    }
+  });
+}
+
+function setupUpdater() {
+  if (!app.isPackaged) return;
+  let autoUpdater;
+  try {
+    autoUpdater = require('electron-updater').autoUpdater;
+  } catch {
+    return;
+  }
+  autoUpdater.autoDownload = true;
+  autoUpdater.on('update-available', (i) => send('update', { state: 'downloading', version: i.version }));
+  autoUpdater.on('download-progress', (p) => send('update', { state: 'downloading', percent: Math.round(p.percent) }));
+  autoUpdater.on('update-downloaded', (i) => send('update', { state: 'ready', version: i.version }));
+  autoUpdater.on('error', () => {});
+  autoUpdater.checkForUpdates().catch(() => {});
+  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 60 * 60 * 1000);
+}
+
+app.whenReady().then(async () => {
+  settings = store.loadSettings();
+  try {
+    app._gpuInfo = await app.getGPUInfo('basic');
+  } catch {
+    app._gpuInfo = null;
+  }
+  await loadConfig();
+  setupIpc();
+  createWindow();
+  setupUpdater();
+});
+
+app.on('window-all-closed', () => {
+  // Když hráč zavře launcher během hry, hra běží dál a launcher se ukončí po jejím konci.
+  if (!gameProcess) app.quit();
+  else gameProcess.once('exit', () => app.quit());
+});

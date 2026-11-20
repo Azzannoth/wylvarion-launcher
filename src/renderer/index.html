@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://wylvarion.cz https://cdn.modrinth.com https://mc-heads.net; connect-src 'self'">
+  <title>Wylvarion Launcher</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg"></div>
+
+  <header class="titlebar">
+    <div class="brand">
+      <img class="brand-logo" src="assets/logo.png" alt="">
+      <span class="brand-name">WYLVARION</span>
+      <span class="brand-tag">Launcher</span>
+    </div>
+    <div class="win-actions">
+      <button class="win-btn" data-win="min" title="Minimalizovat">&#x2013;</button>
+      <button class="win-btn" data-win="max" title="Maximalizovat">&#x25A1;</button>
+      <button class="win-btn close" data-win="close" title="Zavřít">&#x2715;</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar">
+      <button class="nav active" data-page="home"><span class="ico">⌂</span>Domů</button>
+      <button class="nav" data-page="mods"><span class="ico">⚙</span>Mody</button>
+      <button class="nav" data-page="settings"><span class="ico">☰</span>Nastavení</button>
+      <div class="nav-sep"></div>
+      <button class="nav link" data-link="web"><span class="ico">🌐</span>Web</button>
+      <button class="nav link" data-link="shop"><span class="ico">💎</span>Obchod</button>
+      <button class="nav link" data-link="discord"><span class="ico">💬</span>Discord</button>
+      <div class="grow"></div>
+      <div class="account" id="account"></div>
+    </nav>
+
+    <main class="content">
+      <!-- DOMŮ -->
+      <section class="page active" id="page-home">
+        <div class="home-grid">
+          <div class="home-main">
+            <div class="server-card">
+              <div class="status-dot" id="statusDot"></div>
+              <div>
+                <div class="server-name" id="serverName">play.wylvarion.cz</div>
+                <div class="server-sub" id="serverSub">Zjišťuji stav serveru…</div>
+              </div>
+            </div>
+            <h1 class="hero-title">Vítej na <span>Wylvarionu</span></h1>
+            <p class="hero-sub">Klikni na <b>Hrát</b> – launcher sám stáhne hru, Javu a mody a připojí tě rovnou na server.</p>
+
+            <div class="news">
+              <div class="news-head">Novinky</div>
+              <div class="news-list" id="news"></div>
+            </div>
+          </div>
+
+          <aside class="skin-panel">
+            <canvas id="skin" width="260" height="360"></canvas>
+            <div class="skin-name" id="skinName"></div>
+          </aside>
+        </div>
+
+        <div class="playbar">
+          <div class="progress-wrap">
+            <div class="progress-text" id="progressText">Připraveno ke hře</div>
+            <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+          </div>
+          <button class="play" id="playBtn"><span>HRÁT</span></button>
+        </div>
+      </section>
+
+      <!-- MODY -->
+      <section class="page" id="page-mods">
+        <h2>Mody</h2>
+        <p class="muted">Sada Wylvarion se stahuje a aktualizuje automaticky. Povinné mody nejde vypnout, ostatní si zapni podle sebe.</p>
+        <div class="mod-list" id="modList"></div>
+
+        <h3>Vlastní mody</h3>
+        <p class="muted">Vlastní <code>.jar</code> soubory launcher nikdy nesmaže. Musí být pro Fabric a verzi hry <span class="mcver"></span>.</p>
+        <div class="row">
+          <button class="btn" id="addJar">Přidat .jar soubor</button>
+          <button class="btn ghost" data-open="mods">Otevřít složku mods</button>
+        </div>
+        <div class="custom-list" id="customList"></div>
+
+        <h3>Hledat na Modrinthu</h3>
+        <div class="row">
+          <input class="input" id="modSearch" placeholder="Např. shulker box tooltip, journeymap…">
+          <button class="btn" id="modSearchBtn">Hledat</button>
+        </div>
+        <div class="search-list" id="searchList"></div>
+      </section>
+
+      <!-- NASTAVENÍ -->
+      <section class="page" id="page-settings">
+        <h2>Nastavení</h2>
+
+        <div class="setting">
+          <div>
+            <div class="s-title">Paměť pro hru (RAM)</div>
+            <div class="s-desc">Doporučeno: <b id="ramRec"></b>. Tvůj počítač má <span id="ramTotal"></span>.</div>
+          </div>
+          <div class="s-control">
+            <input type="range" id="ram" min="2048" step="512">
+            <span class="ram-val" id="ramVal"></span>
+          </div>
+        </div>
+
+        <div class="setting">
+          <div>
+            <div class="s-title">Shadery</div>
+            <div class="s-desc">Automaticky podle grafiky (tvoje: <b id="gpuTier"></b>). Shadery jdou kdykoli vypnout i ve hře (klávesa K).</div>
+          </div>
+          <div class="s-control">
+            <select class="input" id="shader">
+              <option value="auto">Automaticky</option>
+              <option value="off">Vypnuto</option>
+              <option value="low">Slabší PC a notebooky</option>
+              <option value="medium">Střední výkon</option>
+              <option value="high">Výkonná grafika</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting">
+          <div>
+            <div class="s-title">Po spuštění hry</div>
+            <div class="s-desc">Co má launcher udělat, když se hra spustí.</div>
+          </div>
+          <div class="s-control">
+            <select class="input" id="afterLaunch">
+              <option value="hide">Skrýt a po hře znovu otevřít</option>
+              <option value="keep">Nechat otevřený</option>
+              <option value="close">Zavřít</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting">
+          <div>
+            <div class="s-title">Složka hry</div>
+            <div class="s-desc" id="rootPath"></div>
+          </div>
+          <div class="s-control">
+            <button class="btn ghost" id="chooseRoot">Změnit</button>
+            <button class="btn ghost" data-open="root">Otevřít</button>
+          </div>
+        </div>
+
+        <div class="setting">
+          <div>
+            <div class="s-title">Složky a logy</div>
+            <div class="s-desc">Když se hra nespustí, pošli nám soubor <code>launcher-last.log</code> ze složky logs.</div>
+          </div>
+          <div class="s-control">
+            <button class="btn ghost" data-open="screenshots">Screenshoty</button>
+            <button class="btn ghost" data-open="logs">Logy</button>
+          </div>
+        </div>
+
+        <div class="about">Wylvarion Launcher <span id="appVersion"></span> · Minecraft <span class="mcver"></span> + Fabric</div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Přihlášení -->
+  <div class="overlay" id="loginOverlay" hidden>
+    <div class="modal">
+      <img class="modal-logo" src="assets/logo.png" alt="">
+      <h2>Přihlášení</h2>
+      <p>Přihlas se svým Microsoft účtem, na kterém máš koupený Minecraft: Java Edition.</p>
+      <button class="btn ms" id="loginBtn"><span class="ms-logo"><i></i><i></i><i></i><i></i></span>Přihlásit se přes Microsoft</button>
+      <p class="error" id="loginError"></p>
+      <p class="muted small" id="loginInfo"></p>
+    </div>
+  </div>
+
+  <!-- Aktualizace -->
+  <div class="update-bar" id="updateBar" hidden>
+    <span id="updateText"></span>
+    <button class="btn small" id="updateBtn" hidden>Restartovat a aktualizovat</button>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script src="vendor/skinview3d.bundle.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

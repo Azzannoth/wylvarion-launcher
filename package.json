@@ -1,0 +1,99 @@
+{
+  "name": "wylvarion-launcher",
+  "productName": "Wylvarion Launcher",
+  "version": "1.0.0",
+  "description": "Oficiální launcher Minecraft serveru Wylvarion – jedním kliknutím stáhne hru, Javu i mody a připojí tě na play.wylvarion.cz.",
+  "main": "src/main/main.js",
+  "author": "Wylvarion",
+  "license": "UNLICENSED",
+  "homepage": "https://wylvarion.cz",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "dist": "electron-builder",
+    "dist:linux": "electron-builder --linux",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac"
+  },
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "electron-updater": "^6.8.11",
+    "skinview3d": "^3.4.2"
+  },
+  "devDependencies": {
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "cz.wylvarion.launcher",
+    "productName": "Wylvarion Launcher",
+    "copyright": "© Wylvarion",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "config/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "config/**/*"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Azzannoth",
+        "repo": "wylvarion-launcher",
+        "releaseType": "release"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "build/icon.png",
+      "signAndEditExecutable": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Wylvarion",
+      "artifactName": "Wylvarion-Launcher-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "tar.gz"
+      ],
+      "category": "Game",
+      "icon": "build/icon.png",
+      "artifactName": "Wylvarion-Launcher-${version}-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.games",
+      "icon": "build/icon.png",
+      "artifactName": "Wylvarion-Launcher-${version}-${arch}.${ext}"
+    }
+  }
+}
