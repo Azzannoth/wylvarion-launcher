@@ -88,9 +88,18 @@ async function xbox(msAccessToken) {
 }
 
 async function minecraft(uhs, xstsToken) {
-  const mc = await postJson('https://api.minecraftservices.com/authentication/login_with_xbox', {
-    identityToken: `XBL3.0 x=${uhs};${xstsToken}`
-  });
+  let mc;
+  try {
+    mc = await postJson('https://api.minecraftservices.com/authentication/login_with_xbox', {
+      identityToken: `XBL3.0 x=${uhs};${xstsToken}`
+    });
+  } catch (e) {
+    if (e.status === 403 && /Invalid app registration/i.test(e.body || e.message)) {
+      throw new Error('Přihlášení do Minecraftu zatím čeká na schválení launcheru od Mojangu. Zkus to prosím za pár dní, mezitím hraj přes klasický Minecraft Launcher.');
+    }
+    if (e.status === 429) throw new Error('Příliš mnoho pokusů o přihlášení. Zkus to znovu za pár minut.');
+    throw e;
+  }
   const headers = { Authorization: `Bearer ${mc.access_token}` };
   let profile;
   try {
