@@ -1,9 +1,10 @@
 name: Build launcher
 
-# Spustí se po pushnutí tagu v1.0.1 apod. (vydání) nebo ručně v záložce Actions.
+# Spustí se po vytvoření vydání (Releases → Draft a new release, tag v1.0.1 apod.)
+# nebo ručně v záložce Actions (jen sestaví, nic nevydá).
 on:
-  push:
-    tags: ['v*']
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -34,9 +35,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: npx electron-builder ${{ matrix.target }} --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
+        run: npx electron-builder ${{ matrix.target }} --publish ${{ github.event_name == 'release' && 'always' || 'never' }}
       - uses: actions/upload-artifact@v4
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ github.event_name != 'release' }}
         with:
           name: launcher-${{ matrix.os }}
           path: |

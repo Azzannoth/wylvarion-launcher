@@ -29,9 +29,9 @@ Bez toho se nikdo nepřihlásí. Mojang musí schválit každou novou aplikaci.
 
 ## 2) Vydání na GitHubu (zdarma)
 1. Vytvoř veřejný repozitář `Azzannoth/wylvarion-launcher` a nahraj do něj celou tuto složku (bez `node_modules` a `dist`).
-2. Vytvoř tag a pushni ho, např. `git tag v1.0.0 && git push --tags`.
+2. Na GitHubu dej **Releases → Draft a new release**, vytvoř tag (např. `v1.0.1`) a dej **Publish release**.
 3. GitHub Actions samo sestaví **Windows (.exe instalátor + zip), Linux (AppImage) a macOS (dmg)** a nahraje je do Releases.
-4. Pro novou verzi zvyš `version` v `package.json` a vytvoř nový tag. Hráčům se launcher aktualizuje sám.
+4. Pro novou verzi zvyš `version` v `package.json` a vytvoř nové vydání. Hráčům se launcher aktualizuje sám.
 
 Odkaz ke stažení na web pak bude: `https://github.com/Azzannoth/wylvarion-launcher/releases/latest`
 
