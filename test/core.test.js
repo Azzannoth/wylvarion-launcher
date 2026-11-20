@@ -30,8 +30,8 @@ test('rules: features + substitute', () => {
 });
 
 test('mavenPath', () => {
-  assert.equal(mavenPath('net.fabricmc:fabric-loader:0.20.1'), path.join('net/fabricmc/fabric-loader/0.20.1/fabric-loader-0.20.1.jar'));
-  assert.equal(mavenPath('org.lwjgl:lwjgl:3.3.3:natives-windows'), path.join('org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3-natives-windows.jar'));
+  assert.equal(mavenPath('net.fabricmc:fabric-loader:0.20.1').replace(/\\/g, '/'), 'net/fabricmc/fabric-loader/0.20.1/fabric-loader-0.20.1.jar');
+  assert.equal(mavenPath('org.lwjgl:lwjgl:3.3.3:natives-windows').replace(/\\/g, '/'), 'org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3-natives-windows.jar');
 });
 
 test('collectLibraries: fabric overrides vanilla ASM, natives picked', () => {
