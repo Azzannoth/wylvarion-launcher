@@ -14,6 +14,14 @@ contextBridge.exposeInMainWorld('wyl', {
   login: () => ipcRenderer.invoke('login'),
   logout: () => ipcRenderer.invoke('logout'),
   skin: () => ipcRenderer.invoke('skin'),
+  skins: {
+    state: () => ipcRenderer.invoke('skins:state'),
+    pick: () => ipcRenderer.invoke('skins:pick'),
+    apply: (opts) => ipcRenderer.invoke('skins:apply', opts),
+    saveCurrent: (name) => ipcRenderer.invoke('skins:saveCurrent', name),
+    remove: (id) => ipcRenderer.invoke('skins:remove', id),
+    cape: (id) => ipcRenderer.invoke('skins:cape', id)
+  },
   play: () => ipcRenderer.invoke('play'),
   status: () => ipcRenderer.invoke('status'),
   setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),

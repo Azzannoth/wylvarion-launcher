@@ -17,6 +17,7 @@ const { ping } = require('./core/status');
 const { getJson } = require('./core/http');
 const { defaultRoot, layout } = require('./core/paths');
 const servers = require('./core/servers');
+const skins = require('./core/skins');
 
 let win = null;
 let config = null;
@@ -314,6 +315,82 @@ function setupIpc() {
       return null;
     }
   });
+
+  // --- Skiny a pláště ---
+  const skinLib = () => skins.library(path.join(app.getPath('userData'), 'skins'));
+  // Výsledek vždy jako { ok, ... } nebo { ok:false, error, code }, aby se v okně dal poznat vypršelý login.
+  const safe = (fn) => async (e, ...args) => {
+    try {
+      return { ok: true, ...(await fn(...args)) };
+    } catch (err) {
+      if (err.code === 'LOGIN') {
+        store.clearAccount();
+        send('account', null);
+      }
+      return { ok: false, error: err.message, code: err.code };
+    }
+  };
+  const afterProfile = (acc, p) => {
+    acc.skin = skins.activeSkin(p);
+    store.saveAccount(acc);
+    send('account', publicAccount(acc));
+  };
+  const profileView = async (p) => ({
+    skin: p ? await skins.textureDataUrl((skins.activeSkin(p) || {}).url).catch(() => null) : null,
+    variant: p && skins.activeSkin(p) ? (skins.activeSkin(p).variant === 'SLIM' ? 'slim' : 'classic') : 'classic',
+    capes: p
+      ? await Promise.all(
+          (p.capes || []).map(async (c) => ({ id: c.id, name: c.alias || 'Plášť', active: c.state === 'ACTIVE', dataUrl: await skins.textureDataUrl(c.url).catch(() => null) }))
+        )
+      : []
+  });
+
+  ipcMain.handle('skins:state', safe(async () => {
+    const acc = await validAccount();
+    const p = await skins.profile(acc.accessToken);
+    afterProfile(acc, p);
+    return { ...(await profileView(p)), library: skinLib().list() };
+  }));
+
+  ipcMain.handle('skins:pick', safe(async () => {
+    const r = await dialog.showOpenDialog(win, { title: 'Vyber skin (PNG 64×64)', filters: [{ name: 'Skin', extensions: ['png'] }], properties: ['openFile'] });
+    if (r.canceled || !r.filePaths[0]) return { canceled: true };
+    const png = await fs.promises.readFile(r.filePaths[0]);
+    skins.checkSkin(png);
+    return { name: path.basename(r.filePaths[0], path.extname(r.filePaths[0])).slice(0, 32), data: png.toString('base64'), dataUrl: `data:image/png;base64,${png.toString('base64')}` };
+  }));
+
+  ipcMain.handle('skins:apply', safe(async (opts) => {
+    const acc = await validAccount();
+    const png = opts.libraryId ? skinLib().get(opts.libraryId).png : Buffer.from(String(opts.data || ''), 'base64');
+    const variant = opts.variant || (opts.libraryId ? skinLib().get(opts.libraryId).variant : 'classic');
+    skins.checkSkin(png);
+    if (opts.save && !opts.libraryId) skinLib().add(png, opts.name, variant);
+    const p = await skins.upload(acc.accessToken, png, variant);
+    afterProfile(acc, p);
+    return { ...(await profileView(p)), library: skinLib().list() };
+  }));
+
+  ipcMain.handle('skins:saveCurrent', safe(async (name) => {
+    const acc = await validAccount();
+    if (!acc.skin || !acc.skin.url) throw new Error('Účet nemá vlastní skin.');
+    const res = await require('./core/http').request(acc.skin.url.replace(/^http:/, 'https:'));
+    if (!res.ok) throw new Error('Skin se nepodařilo stáhnout.');
+    skinLib().add(Buffer.from(await res.arrayBuffer()), name || acc.name, acc.skin.variant === 'SLIM' ? 'slim' : 'classic');
+    return { library: skinLib().list() };
+  }));
+
+  ipcMain.handle('skins:remove', safe(async (id) => {
+    skinLib().remove(id);
+    return { library: skinLib().list() };
+  }));
+
+  ipcMain.handle('skins:cape', safe(async (capeId) => {
+    const acc = await validAccount();
+    const p = await skins.setCape(acc.accessToken, capeId || null);
+    afterProfile(acc, p);
+    return await profileView(p);
+  }));
 
   ipcMain.handle('logout', () => {
     store.clearAccount();

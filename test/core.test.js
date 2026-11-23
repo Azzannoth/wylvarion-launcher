@@ -143,3 +143,57 @@ test('servers.dat: přidá Wylvarion s povoleným resource packem a zachová ost
   const r = reader(again).root();
   assert.deepEqual(writer().root(r.name, r.value), again);
 });
+
+test('skins: kontrola PNG, knihovna a odeslání na Mojang API', async () => {
+  const fs = require('fs');
+  const os = require('os');
+  const zlib = require('zlib');
+  const skins = require('../src/main/core/skins');
+  const png = (w, h) => {
+    const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+    const crc = (b) => { let c = 0xffffffff; for (const x of b) c = crcTable[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+    const chunk = (t, d) => { const len = Buffer.alloc(4); len.writeUInt32BE(d.length); const td = Buffer.concat([Buffer.from(t), d]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([len, td, c]); };
+    const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 6;
+    const raw = Buffer.alloc((w * 4 + 1) * h);
+    return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+  };
+  const ok = png(64, 64);
+  assert.deepEqual(skins.pngSize(ok), { width: 64, height: 64 });
+  skins.checkSkin(ok);
+  skins.checkSkin(png(64, 32));
+  assert.throws(() => skins.checkSkin(png(128, 128)), /64×64/);
+  assert.throws(() => skins.checkSkin(Buffer.from('nope')), /PNG/);
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wylskin-'));
+  const lib = skins.library(dir);
+  const id = lib.add(ok, 'Rytíř', 'slim');
+  assert.equal(lib.add(ok, 'Rytíř 2', 'slim'), id); // stejný obrázek se neuloží dvakrát
+  assert.equal(lib.list().length, 1);
+  assert.equal(lib.list()[0].name, 'Rytíř 2');
+  assert.ok(lib.get(id).png.equals(ok));
+  lib.remove(id);
+  assert.equal(lib.list().length, 0);
+
+  const realFetch = global.fetch;
+  const calls = [];
+  global.fetch = async (url, opts) => {
+    calls.push({ url, opts });
+    if (url.endsWith('/capes/active') && opts.method === 'PUT') return new Response('{"errorMessage":"cape not owned"}', { status: 400 });
+    return new Response(JSON.stringify({ id: 'u', name: 'Hrac', skins: [{ state: 'ACTIVE', url: 'http://textures.minecraft.net/texture/x', variant: 'SLIM' }], capes: [] }), { status: 200 });
+  };
+  try {
+    const prof = await skins.upload('TOKEN', ok, 'slim');
+    assert.equal(calls[0].url, 'https://api.minecraftservices.com/minecraft/profile/skins');
+    assert.equal(calls[0].opts.method, 'POST');
+    assert.equal(calls[0].opts.headers.Authorization, 'Bearer TOKEN');
+    assert.equal(calls[0].opts.body.get('variant'), 'slim');
+    assert.equal((await calls[0].opts.body.get('file').arrayBuffer()).byteLength, ok.length);
+    assert.deepEqual(skins.activeSkin(prof), { url: 'http://textures.minecraft.net/texture/x', variant: 'SLIM' });
+    await assert.rejects(skins.setCape('TOKEN', 'abc'), /cape not owned/);
+    await skins.setCape('TOKEN', null);
+    assert.equal(calls.at(-1).opts.method, 'DELETE');
+    assert.equal(calls.length, 3); // změny se při chybě neopakují
+  } finally {
+    global.fetch = realFetch;
+  }
+});

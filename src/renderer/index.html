@@ -26,6 +26,7 @@
   <div class="layout">
     <nav class="sidebar">
       <button class="nav active" data-page="home"><span class="ico">⌂</span>Domů</button>
+      <button class="nav" data-page="skins"><span class="ico">👕</span>Skin</button>
       <button class="nav" data-page="mods"><span class="ico">⚙</span>Mody</button>
       <button class="nav" data-page="settings"><span class="ico">☰</span>Nastavení</button>
       <div class="nav-sep"></div>
@@ -70,6 +71,47 @@
           </div>
           <button class="play" id="playBtn"><span>HRÁT</span></button>
         </div>
+      </section>
+
+      <!-- SKIN -->
+      <section class="page" id="page-skins">
+        <h2>Skin a plášť</h2>
+        <p class="muted">Změna platí pro celý tvůj Minecraft účet, uvidí ji všichni na všech serverech. Na Wylvarionu se nový skin projeví po dalším připojení.</p>
+        <div class="skins-grid">
+          <div class="skins-preview">
+            <canvas id="skinEdit" width="240" height="320"></canvas>
+            <div class="variant" id="variantBox">
+              <button class="vbtn active" data-variant="classic">Klasická postava</button>
+              <button class="vbtn" data-variant="slim">Tenká (Alex)</button>
+            </div>
+            <div class="skins-state" id="skinsState">Načítám skin…</div>
+          </div>
+          <div class="skins-side">
+            <div class="skins-card">
+              <div class="s-title">Nový skin</div>
+              <p class="muted small">PNG obrázek 64×64 pixelů, třeba z NameMC nebo Skindexu.</p>
+              <div class="row">
+                <button class="btn ghost" id="skinPick">Vybrat soubor…</button>
+                <input class="input" id="skinTitle" maxlength="32" placeholder="Název (pro uložené skiny)">
+              </div>
+              <label class="check"><input type="checkbox" id="skinSave" checked> Uložit do mých skinů</label>
+              <div class="row" style="margin-top:12px">
+                <button class="btn" id="skinApply" disabled>Nastavit skin</button>
+                <button class="btn ghost" id="skinReset" hidden>Zrušit</button>
+              </div>
+            </div>
+
+            <div class="skins-card">
+              <div class="s-title">Plášť</div>
+              <div class="capes" id="capeList"></div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Moje skiny</h3>
+        <p class="muted">Kliknutím na skin ho nastavíš. Skiny jsou uložené jen v tomhle počítači.
+          <button class="link-btn" id="skinSaveCurrent">Uložit aktuální skin</button></p>
+        <div class="skin-lib" id="skinLib"></div>
       </section>
 
       <!-- MODY -->

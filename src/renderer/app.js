@@ -30,6 +30,7 @@ $$('.nav[data-page]').forEach((b) =>
     $$('.nav[data-page]').forEach((x) => x.classList.toggle('active', x === b));
     $$('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + b.dataset.page));
     if (b.dataset.page === 'mods') renderCustomMods();
+    if (b.dataset.page === 'skins') openSkins();
   })
 );
 $$('.nav[data-link]').forEach((b) => b.addEventListener('click', () => state && wyl.external(state.config.links[b.dataset.link])));
@@ -55,6 +56,7 @@ function renderAccount() {
   $('#logoutBtn').onclick = async () => {
     await wyl.logout();
     state.account = null;
+    sk.loaded = false;
     renderAccount();
     loadSkin();
     showLogin();
@@ -79,6 +81,8 @@ $('#loginBtn').addEventListener('click', async () => {
     $('#loginOverlay').hidden = true;
     renderAccount();
     loadSkin();
+    sk.loaded = false;
+    if ($('#page-skins').classList.contains('active')) openSkins();
     toast(`Vítej, ${state.account.name}!`);
   } catch (e) {
     $('#loginError').textContent = cleanErr(e);
@@ -112,6 +116,257 @@ async function loadSkin() {
     /* skin není nutný */
   }
 }
+
+/* ---------- Skin a plášť ---------- */
+const sk = { viewer: null, variant: 'classic', pending: null, current: null, busy: false, loaded: false };
+
+function loadImage(src) {
+  return new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = src;
+  });
+}
+
+/** Plochý pohled zepředu (16×32 px) pro náhledy uložených skinů. */
+async function drawFront(canvas, src, slim) {
+  const img = await loadImage(src);
+  const legacy = img.height === 32;
+  canvas.width = 16;
+  canvas.height = 32;
+  const c = canvas.getContext('2d');
+  c.imageSmoothingEnabled = false;
+  const part = (sx, sy, w, h, dx, dy, mirror) => {
+    if (!mirror) return c.drawImage(img, sx, sy, w, h, dx, dy, w, h);
+    c.save();
+    c.translate(dx + w, dy);
+    c.scale(-1, 1);
+    c.drawImage(img, sx, sy, w, h, 0, 0, w, h);
+    c.restore();
+  };
+  const aw = slim ? 3 : 4;
+  const ax = slim ? 1 : 0;
+  part(8, 8, 8, 8, 4, 0); // hlava
+  part(20, 20, 8, 12, 4, 8); // tělo
+  part(44, 20, aw, 12, ax, 8); // pravá ruka
+  if (legacy) part(44, 20, aw, 12, 12, 8, true);
+  else part(36, 52, aw, 12, 12, 8); // levá ruka
+  part(4, 20, 4, 12, 4, 20); // pravá noha
+  if (legacy) part(4, 20, 4, 12, 8, 20, true);
+  else part(20, 52, 4, 12, 8, 20); // levá noha
+  part(40, 8, 8, 8, 4, 0); // vrstva hlavy
+  if (!legacy) {
+    part(20, 36, 8, 12, 4, 8);
+    part(44, 36, aw, 12, ax, 8);
+    part(52, 52, aw, 12, 12, 8);
+    part(4, 36, 4, 12, 4, 20);
+    part(4, 52, 4, 12, 8, 20);
+  }
+}
+
+async function drawCape(canvas, src) {
+  const img = await loadImage(src);
+  const k = img.width / 64; // HD pláště
+  canvas.width = 10;
+  canvas.height = 16;
+  const c = canvas.getContext('2d');
+  c.imageSmoothingEnabled = false;
+  c.drawImage(img, 1 * k, 1 * k, 10 * k, 16 * k, 0, 0, 10, 16);
+}
+
+function skinState(text, pending) {
+  const e = $('#skinsState');
+  e.textContent = text;
+  e.classList.toggle('pending', Boolean(pending));
+}
+
+function setVariant(v) {
+  sk.variant = v === 'slim' ? 'slim' : 'classic';
+  $$('#variantBox .vbtn').forEach((b) => b.classList.toggle('active', b.dataset.variant === sk.variant));
+}
+
+async function showSkinPreview() {
+  if (!sk.viewer) {
+    sk.viewer = new skinview3d.SkinViewer({ canvas: $('#skinEdit'), width: 240, height: 320 });
+    sk.viewer.zoom = 0.8;
+    sk.viewer.fov = 40;
+    sk.viewer.animation = new skinview3d.WalkingAnimation();
+    sk.viewer.animation.speed = 0.6;
+    sk.viewer.controls.enableZoom = false;
+  }
+  const src = sk.pending ? sk.pending.dataUrl : sk.current && sk.current.skin;
+  try {
+    await sk.viewer.loadSkin(src || null, { model: sk.variant === 'slim' ? 'slim' : 'default' });
+    const cape = sk.current && (sk.current.capes || []).find((c) => c.active);
+    if (cape && cape.dataUrl) await sk.viewer.loadCape(cape.dataUrl);
+    else sk.viewer.loadCape(null);
+  } catch {
+    /* náhled není nutný */
+  }
+}
+
+function skinFail(r) {
+  if (r && r.code === 'LOGIN') {
+    state.account = null;
+    renderAccount();
+    showLogin();
+  }
+  toast((r && r.error) || 'Něco se nepovedlo.', true);
+}
+
+function renderCapes() {
+  const capes = (sk.current && sk.current.capes) || [];
+  const box = $('#capeList');
+  if (!capes.length) {
+    box.innerHTML = '<p class="muted small" style="margin:0">Tvůj účet nemá žádný plášť.</p>';
+    return;
+  }
+  const none = !capes.some((c) => c.active);
+  box.innerHTML =
+    `<button class="cape ${none ? 'active' : ''}" data-cape=""><span class="none">✕</span>Bez pláště</button>` +
+    capes.map((c) => `<button class="cape ${c.active ? 'active' : ''}" data-cape="${esc(c.id)}"><canvas></canvas>${esc(c.name)}</button>`).join('');
+  capes.forEach((c, i) => c.dataUrl && drawCape(box.querySelectorAll('canvas')[i], c.dataUrl).catch(() => {}));
+  $$('#capeList [data-cape]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      if (sk.busy || b.classList.contains('active')) return;
+      sk.busy = true;
+      $$('#capeList .cape').forEach((x) => (x.disabled = true));
+      const r = await wyl.skins.cape(b.dataset.cape || null);
+      sk.busy = false;
+      if (!r.ok) {
+        renderCapes();
+        return skinFail(r);
+      }
+      sk.current = { ...sk.current, capes: r.capes };
+      renderCapes();
+      showSkinPreview();
+      toast(b.dataset.cape ? 'Plášť nastaven.' : 'Plášť schován.');
+    })
+  );
+}
+
+function renderLibrary(list) {
+  sk.library = list || sk.library || [];
+  const box = $('#skinLib');
+  if (!sk.library.length) {
+    box.innerHTML = '<p class="muted">Zatím žádné uložené skiny. Nahraj nový nebo ulož ten, co máš teď.</p>';
+    return;
+  }
+  box.innerHTML = sk.library
+    .map((s) => `<div class="lib-item" data-id="${esc(s.id)}" title="${esc(s.name)} (${s.variant === 'slim' ? 'tenká' : 'klasická'} postava)">
+        <canvas></canvas><div class="lname">${esc(s.name)}</div>
+        <button class="del" data-del="${esc(s.id)}" title="Smazat">✕</button></div>`)
+    .join('');
+  sk.library.forEach((s, i) => drawFront(box.querySelectorAll('canvas')[i], s.dataUrl, s.variant === 'slim').catch(() => {}));
+  $$('#skinLib .lib-item').forEach((el) =>
+    el.addEventListener('click', async (e) => {
+      if (e.target.closest('[data-del]')) return;
+      await applySkin({ libraryId: el.dataset.id });
+    })
+  );
+  $$('#skinLib [data-del]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      const r = await wyl.skins.remove(b.dataset.del);
+      if (r.ok) renderLibrary(r.library);
+    })
+  );
+}
+
+function clearPending() {
+  sk.pending = null;
+  $('#skinApply').disabled = true;
+  $('#skinReset').hidden = true;
+  $('#skinTitle').value = '';
+  if (sk.current) setVariant(sk.current.variant);
+  skinState('Tvůj aktuální skin');
+}
+
+async function applySkin(opts) {
+  if (sk.busy) return;
+  sk.busy = true;
+  $('#skinApply').disabled = true;
+  skinState('Nastavuji skin…', true);
+  const r = await wyl.skins.apply(opts);
+  sk.busy = false;
+  if (!r.ok) {
+    skinState(sk.pending ? 'Nový skin ještě není nastavený' : 'Tvůj aktuální skin', Boolean(sk.pending));
+    $('#skinApply').disabled = !sk.pending;
+    return skinFail(r);
+  }
+  sk.current = r;
+  renderLibrary(r.library);
+  clearPending();
+  showSkinPreview();
+  loadSkin();
+  toast('Skin nastaven! Ve hře ho uvidíš po dalším připojení na server.');
+}
+
+async function openSkins(force) {
+  if (!state.account) {
+    skinState('Pro změnu skinu se nejdřív přihlas.');
+    return;
+  }
+  if (sk.loaded && !force) return;
+  skinState('Načítám skin…');
+  const r = await wyl.skins.state();
+  if (!r.ok) {
+    skinState('Skin se nepodařilo načíst.');
+    return skinFail(r);
+  }
+  sk.loaded = true;
+  sk.current = r;
+  setVariant(r.variant);
+  skinState('Tvůj aktuální skin');
+  renderCapes();
+  renderLibrary(r.library);
+  showSkinPreview();
+}
+
+$$('#variantBox .vbtn').forEach((b) =>
+  b.addEventListener('click', () => {
+    setVariant(b.dataset.variant);
+    if (!sk.pending) {
+      // změna postavy u aktuálního skinu = znovu nahrát stejný obrázek
+      $('#skinApply').disabled = !(sk.current && sk.current.skin) || sk.variant === sk.current.variant;
+    }
+    showSkinPreview();
+  })
+);
+
+$('#skinPick').addEventListener('click', async () => {
+  const r = await wyl.skins.pick();
+  if (!r.ok) return toast(r.error, true);
+  if (r.canceled) return;
+  sk.pending = r;
+  $('#skinTitle').value = r.name;
+  $('#skinApply').disabled = false;
+  $('#skinReset').hidden = false;
+  skinState('Náhled – skin ještě není nastavený', true);
+  showSkinPreview();
+});
+
+$('#skinReset').addEventListener('click', () => {
+  clearPending();
+  showSkinPreview();
+});
+
+$('#skinApply').addEventListener('click', () => {
+  if (sk.pending) {
+    return applySkin({ data: sk.pending.data, variant: sk.variant, name: $('#skinTitle').value.trim() || sk.pending.name, save: $('#skinSave').checked });
+  }
+  // jen změna postavy u aktuálního skinu
+  if (sk.current && sk.current.skin) {
+    applySkin({ data: sk.current.skin.split(',')[1], variant: sk.variant });
+  }
+});
+
+$('#skinSaveCurrent').addEventListener('click', async () => {
+  const r = await wyl.skins.saveCurrent();
+  if (!r.ok) return skinFail(r);
+  renderLibrary(r.library);
+  toast('Aktuální skin uložen do Mých skinů.');
+});
 
 /* ---------- Stav serveru a novinky ---------- */
 async function refreshStatus() {

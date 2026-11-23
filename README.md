@@ -7,6 +7,7 @@ Vše je zdarma: GitHub (kód + Releases + Actions), Modrinth, Mojang a Microsoft
 ## Co umí
 - Tlačítko **HRÁT** stáhne Javu, Minecraft 26.3, Fabric a mody a rovnou připojí na server (Quick Play).
 - **Mody:** povinné (Sodium, Lithium, Iris, Voice Chat…) a volitelné, které jde vypnout (minimapa, zoom…). Hráč si může přidat vlastní mody přes Modrinth nebo jako .jar.
+- **Skin a plášť:** nahrání skinu (PNG 64×64, klasická / tenká postava) s 3D náhledem, uložené skiny a výběr pláště. Mění se přes oficiální Minecraft API na celém účtu.
 - **Shadery** se volí automaticky podle grafiky (slabší / střední / výkonná). Jdou vypnout i ve hře klávesou K.
 - **Nastavení:** RAM (s doporučením), složka hry, co dělat po spuštění.
 - **Novinky** se berou z webu (`/api/launcher.php` → `includes/data/news.php`).
