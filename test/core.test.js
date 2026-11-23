@@ -298,3 +298,42 @@ test('serverpack: uloží pack do mezipaměti hry, beze změny nestahuje, pamatu
     global.fetch = realFetch;
   }
 });
+
+test('serverpack: pack se zapne jako lokální resource pack a vlastní packy hráče zůstanou', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const { installLocal, LOCAL_ID } = require('../src/main/core/serverpack');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wylloc-'));
+  const dirs = { root, game: path.join(root, 'game') };
+  const master = path.join(root, 'm.zip');
+  fs.writeFileSync(master, 'ZIPDATA');
+  fs.mkdirSync(dirs.game, { recursive: true });
+
+  // první spuštění bez options.txt
+  installLocal(dirs, master);
+  let opts = fs.readFileSync(path.join(dirs.game, 'options.txt'), 'utf8');
+  assert.match(opts, /^resourcePacks:\["vanilla","file\/wylvarion-server\.zip"\]$/m);
+  assert.equal(fs.readFileSync(path.join(dirs.game, 'resourcepacks', 'wylvarion-server.zip'), 'utf8'), 'ZIPDATA');
+
+  // hráč má vlastní pack a další volby
+  fs.writeFileSync(path.join(dirs.game, 'options.txt'), 'version:4000\nresourcePacks:["vanilla","file/wylvarion-server.zip","file/Faithful.zip"]\nfov:0.5\n');
+  installLocal(dirs, master);
+  opts = fs.readFileSync(path.join(dirs.game, 'options.txt'), 'utf8');
+  assert.match(opts, /^resourcePacks:\["vanilla","file\/Faithful\.zip","file\/wylvarion-server\.zip"\]$/m);
+  assert.match(opts, /^fov:0\.5$/m);
+  assert.match(opts, /^version:4000$/m);
+  assert.ok(opts.includes(`incompatibleResourcePacks:["${LOCAL_ID}"]`));
+});
+
+test('servers.dat: s lokálním packem se pack od serveru odmítne', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const { ensureServer, _nbt } = require('../src/main/core/servers');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wylsrv2-'));
+  const server = { name: 'Wylvarion', host: 'play.wylvarion.cz', port: 25565 };
+  const at = () => _nbt.reader(fs.readFileSync(path.join(dir, 'servers.dat'))).root().value.find((e) => e.name === 'servers').value.items[0].find((e) => e.name === 'acceptTextures').value;
+  ensureServer(dir, server);
+  assert.equal(at(), 1);
+  ensureServer(dir, server, { acceptTextures: 0 });
+  assert.equal(at(), 0);
+});

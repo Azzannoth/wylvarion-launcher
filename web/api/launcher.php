@@ -44,6 +44,7 @@ $config = [
         ['id' => 'iris', 'name' => 'Iris Shaders', 'desc' => 'Podpora shaderů', 'required' => true],
         ['id' => 'modmenu', 'name' => 'Mod Menu', 'desc' => 'Seznam a nastavení modů', 'required' => true],
         ['id' => 'xaeros-minimap', 'name' => 'Xaero\'s Minimap', 'desc' => 'Minimapa', 'default' => true],
+        ['id' => 'xaeros-world-map', 'name' => 'Xaero\'s World Map', 'desc' => 'Velká mapa světa (klávesa M)', 'default' => true],
         ['id' => 'sodium-extra', 'name' => 'Sodium Extra', 'desc' => 'Další grafická nastavení', 'default' => true, 'version' => 'fs5l9Q1U'],
         ['id' => 'reeses-sodium-options', 'name' => 'Reese\'s Sodium Options', 'desc' => 'Přehlednější nastavení grafiky', 'default' => true, 'version' => 'EfchygKx'],
         ['id' => 'continuity', 'name' => 'Continuity', 'desc' => 'Propojené textury skla a bloků', 'default' => true],

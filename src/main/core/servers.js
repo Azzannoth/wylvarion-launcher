@@ -92,7 +92,9 @@ function sameHost(ip, host, port) {
  * Zajistí, že servers.dat obsahuje server s povoleným resource packem.
  * Vrací true, pokud se soubor změnil.
  */
-function ensureServer(gameDir, server) {
+function ensureServer(gameDir, server, opts = {}) {
+  // 1 = Povolit (stáhne pack od serveru), 0 = Zakázat (pack už má hra nainstalovaný sama)
+  const accept = opts.acceptTextures === 0 ? 0 : 1;
   const file = path.join(gameDir, 'servers.dat');
   const address = server.port && server.port !== 25565 ? `${server.host}:${server.port}` : server.host;
   let root = { name: '', value: [] };
@@ -131,8 +133,8 @@ function ensureServer(gameDir, server) {
     changed = true;
   }
   const at = get(entry, 'acceptTextures');
-  if (!at || at.value !== 1) {
-    set(entry, T.BYTE, 'acceptTextures', 1);
+  if (!at || at.value !== accept) {
+    set(entry, T.BYTE, 'acceptTextures', accept);
     changed = true;
   }
   if (changed) {

@@ -111,7 +111,74 @@ async function prefetch(dirs, rp, progress = () => {}) {
     fs.copyFileSync(master, dest);
   }
   fs.writeFileSync(stateFile, JSON.stringify({ url: rp.url, sha1, meta: meta || state.meta || null, ids: [...ids], history: [...history] }, null, 2));
-  return { sha1, ids: [...ids], downloaded };
+  return { sha1, ids: [...ids], downloaded, master };
 }
 
-module.exports = { prefetch, nameUuid, learnIds };
+const LOCAL_NAME = 'wylvarion-server.zip';
+const LOCAL_ID = `file/${LOCAL_NAME}`;
+
+/** Načte seznam z řádku options.txt (JSON pole). */
+function parseList(line) {
+  try {
+    const v = JSON.parse(line);
+    return Array.isArray(v) ? v.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Nainstaluje pack jako normální resource pack hry (resourcepacks/ + options.txt),
+ * takže se načte už při startu hry a při připojení na server se nic nestahuje ani nenačítá.
+ */
+function installLocal(dirs, master) {
+  const packsDir = path.join(dirs.game, 'resourcepacks');
+  const dest = path.join(packsDir, LOCAL_NAME);
+  fs.mkdirSync(packsDir, { recursive: true });
+  let same = false;
+  try {
+    same = fs.statSync(dest).size === fs.statSync(master).size && fs.readFileSync(dest).equals(fs.readFileSync(master));
+  } catch {
+    /* ještě není */
+  }
+  if (!same) {
+    const tmp = dest + '.tmp';
+    fs.copyFileSync(master, tmp);
+    fs.renameSync(tmp, dest);
+  }
+
+  const optionsFile = path.join(dirs.game, 'options.txt');
+  let lines = [];
+  try {
+    lines = fs.readFileSync(optionsFile, 'utf8').split(/\r?\n/);
+  } catch {
+    /* první spuštění – hra si ostatní volby doplní sama */
+  }
+  if (lines.length && lines[lines.length - 1] === '') lines.pop();
+  const idx = lines.findIndex((l) => l.startsWith('resourcePacks:'));
+  const packs = idx === -1 ? ['vanilla'] : parseList(lines[idx].slice('resourcePacks:'.length));
+  // náš pack úplně nahoru (poslední v seznamu = nejvyšší priorita), vlastní packy hráče zůstanou
+  const next = [...packs.filter((p) => p !== LOCAL_ID), LOCAL_ID];
+  const line = `resourcePacks:${JSON.stringify(next)}`;
+  let changed = false;
+  if (idx === -1) {
+    lines.push(line);
+    changed = true;
+  } else if (lines[idx] !== line) {
+    lines[idx] = line;
+    changed = true;
+  }
+  // kdyby ho hra dřív označila jako nekompatibilní, povolíme ho
+  const inc = lines.findIndex((l) => l.startsWith('incompatibleResourcePacks:'));
+  const incList = inc === -1 ? [] : parseList(lines[inc].slice('incompatibleResourcePacks:'.length));
+  if (!incList.includes(LOCAL_ID)) {
+    const l2 = `incompatibleResourcePacks:${JSON.stringify([...incList, LOCAL_ID])}`;
+    if (inc === -1) lines.push(l2);
+    else lines[inc] = l2;
+    changed = true;
+  }
+  if (changed) fs.writeFileSync(optionsFile, lines.join('\n') + '\n');
+  return { changed: changed || !same };
+}
+
+module.exports = { prefetch, installLocal, nameUuid, learnIds, LOCAL_ID };

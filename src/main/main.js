@@ -185,16 +185,23 @@ async function play() {
       }
     }
 
-    // Resource pack serveru předem do mezipaměti hry, ať se při připojení nestahuje.
+    // Resource pack serveru: launcher ho stáhne (jen když se změnil) a zapne ve hře jako
+    // normální resource pack. Načte se při startu hry, takže se při připojení nic nestahuje
+    // ani nenačítá – pack od serveru hra odmítne (ItemsAdder za to nevyhazuje).
+    let localPack = false;
     try {
-      await serverpack.prefetch(d, config.resourcePack, progress);
+      const rp = await serverpack.prefetch(d, config.resourcePack, progress);
+      if (rp && rp.master) {
+        serverpack.installLocal(d, rp.master);
+        localPack = true;
+      }
     } catch (e) {
       send('notice', 'Resource pack serveru se nepodařilo stáhnout předem, stáhne se při připojení.');
     }
 
-    // Server v seznamu serverů s povoleným resource packem (stáhne se sám, bez dotazu).
+    // Server v seznamu serverů; pack od serveru přijmout jen když ho nemáme nainstalovaný sami (stáhne se sám, bez dotazu).
     try {
-      servers.ensureServer(d.game, config.server);
+      servers.ensureServer(d.game, config.server, { acceptTextures: localPack ? 0 : 1 });
     } catch (e) {
       send('notice', `Nepodařilo se nastavit seznam serverů: ${e.message}`);
     }
