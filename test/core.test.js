@@ -252,3 +252,49 @@ test('buildCommand: bez přímého připojení se hra otevře v menu', () => {
   assert.ok(!buildCommand({ ...base, quickPlay: false }).args.includes('--quickPlayMultiplayer'));
   assert.ok(buildCommand({ ...base, quickPlay: true }).args.includes('--quickPlayMultiplayer'));
 });
+
+test('serverpack: uloží pack do mezipaměti hry, beze změny nestahuje, pamatuje si UUID od serveru', async () => {
+  const fs = require('fs');
+  const os = require('os');
+  const crypto = require('crypto');
+  const { prefetch, nameUuid } = require('../src/main/core/serverpack');
+  assert.equal(nameUuid('test'), '098f6bcd-4621-3373-8ade-4e832627b4f6'); // stejné jako Java UUID.nameUUIDFromBytes
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wylpack-'));
+  const dirs = { root, game: path.join(root, 'game') };
+  const url = 'https://github.com/x/y/releases/download/1.1/generated.zip';
+  let body = Buffer.from('PACK-v1');
+  let etag = '"v1"';
+  let gets = 0;
+  const realFetch = global.fetch;
+  global.fetch = async (u, opts = {}) => {
+    if (opts.method === 'HEAD') return new Response(null, { status: 200, headers: { etag, 'content-length': String(body.length) } });
+    gets++;
+    return new Response(body, { status: 200 });
+  };
+  const sha = (b) => crypto.createHash('sha1').update(b).digest('hex');
+  try {
+    const r1 = await prefetch(dirs, { url });
+    assert.equal(r1.downloaded, true);
+    const uid = nameUuid(url);
+    assert.ok(fs.readFileSync(path.join(dirs.game, 'downloads', uid, sha(body))).equals(body));
+
+    const r2 = await prefetch(dirs, { url });
+    assert.equal(r2.downloaded, false);
+    assert.equal(gets, 1);
+
+    // hra pack uložila pod jiným UUID (plugin ho určil sám) – launcher se to naučí
+    const other = '11111111-2222-3333-8444-555555555555';
+    fs.mkdirSync(path.join(dirs.game, 'downloads', other), { recursive: true });
+    fs.copyFileSync(path.join(dirs.game, 'downloads', uid, sha(body)), path.join(dirs.game, 'downloads', other, sha(body)));
+
+    body = Buffer.from('PACK-v2-new');
+    etag = '"v2"';
+    const r3 = await prefetch(dirs, { url });
+    assert.equal(r3.downloaded, true);
+    assert.ok(fs.existsSync(path.join(dirs.game, 'downloads', other, sha(body))));
+    assert.ok(fs.existsSync(path.join(dirs.game, 'downloads', uid, sha(body))));
+  } finally {
+    global.fetch = realFetch;
+  }
+});

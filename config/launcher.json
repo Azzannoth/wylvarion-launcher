@@ -6,6 +6,9 @@
     "host": "play.wylvarion.cz",
     "port": 25565
   },
+  "resourcePack": {
+    "url": "https://github.com/Azzannoth/ItemsAdderV2/releases/download/1.1/generated.zip"
+  },
   "minecraft": "26.3",
   "fabricLoader": "latest",
   "microsoft": {

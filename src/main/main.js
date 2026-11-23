@@ -18,6 +18,7 @@ const { getJson } = require('./core/http');
 const { defaultRoot, layout } = require('./core/paths');
 const servers = require('./core/servers');
 const skins = require('./core/skins');
+const serverpack = require('./core/serverpack');
 
 let win = null;
 let config = null;
@@ -182,6 +183,13 @@ async function play() {
       } catch (e) {
         send('notice', `Shader se nepodařilo nastavit: ${e.message}`);
       }
+    }
+
+    // Resource pack serveru předem do mezipaměti hry, ať se při připojení nestahuje.
+    try {
+      await serverpack.prefetch(d, config.resourcePack, progress);
+    } catch (e) {
+      send('notice', 'Resource pack serveru se nepodařilo stáhnout předem, stáhne se při připojení.');
     }
 
     // Server v seznamu serverů s povoleným resource packem (stáhne se sám, bez dotazu).

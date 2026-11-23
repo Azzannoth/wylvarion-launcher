@@ -394,7 +394,7 @@ function renderNews() {
 }
 
 /* ---------- Hraní ---------- */
-const STAGES = { start: 0, meta: 0.02, client: 0.05, libraries: 0.1, assets: 0.3, mods: 0.7, java: 0.8, launch: 1 };
+const STAGES = { start: 0, meta: 0.02, client: 0.05, libraries: 0.1, assets: 0.3, mods: 0.7, pack: 0.75, java: 0.8, launch: 1 };
 
 function setProgress(p) {
   const fill = $('#progressFill');
@@ -544,8 +544,20 @@ function renderSettings() {
 
   const tiers = { low: 'slabší', medium: 'střední', high: 'výkonná' };
   $('#gpuTier').textContent = tiers[state.gpuTier] || state.gpuTier;
+  const setShader = async (v) => {
+    if (v !== 'off') state.settings.lastShaderPreset = v;
+    state.settings.shaderPreset = v;
+    $('#shader').value = v;
+    $('#quickShaders').checked = v !== 'off';
+    await wyl.setSettings({ shaderPreset: v });
+  };
   $('#shader').value = s.shaderPreset || 'auto';
-  $('#shader').onchange = () => wyl.setSettings({ shaderPreset: $('#shader').value });
+  $('#quickShaders').checked = (s.shaderPreset || 'auto') !== 'off';
+  $('#shader').onchange = () => setShader($('#shader').value);
+  $('#quickShaders').onchange = () => {
+    setShader($('#quickShaders').checked ? state.settings.lastShaderPreset || 'auto' : 'off');
+    toast($('#quickShaders').checked ? 'Shadery zapnuté.' : 'Shadery vypnuté.');
+  };
 
   $('#autoJoin').checked = Boolean(s.autoJoin);
   $('#autoJoin').onchange = () => wyl.setSettings({ autoJoin: $('#autoJoin').checked });
