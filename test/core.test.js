@@ -210,7 +210,7 @@ test('mody: přesná verze předepsaná závislostí má přednost (Iris → Sod
     sodiumNew: ver('tFcTKXDx', 'AANobbMI', '0.9.3'),
     sodiumOld: ver('bAZQdGpg', 'AANobbMI', '0.9.2'),
     iris: ver('irisV', 'YL57xq9U', '1.11.7', [{ project_id: 'AANobbMI', version_id: 'bAZQdGpg', dependency_type: 'required' }]),
-    fapi: ver('fapiV', 'P7dR8mSH', '1.0'),
+    fapi: ver('fapiV', 'P7dR8mSH', '1.0', [{ project_id: '1vrSzlao', dependency_type: 'required' }]),
     zoom: ver('zoomOld', 'w7ThoJFB', '2.0')
   };
   const realFetch = global.fetch;
@@ -235,7 +235,7 @@ test('mody: přesná verze předepsaná závislostí má přednost (Iris → Sod
     assert.equal(by.YL57xq9U, '1.11.7');
     assert.equal(by.w7ThoJFB, '2.0');
     assert.equal(files.length, 4);
-    assert.equal(missing.length, 0);
+    assert.equal(missing.length, 0); // chybějící závislost (1vrSzlao) se nehlásí
   } finally {
     global.fetch = realFetch;
   }

@@ -88,7 +88,9 @@ async function resolve(wanted, gameVersion, loader = 'fabric') {
           v = null;
         }
         if (!v) {
-          missing.push(m);
+          // Hlásíme jen mody ze seznamu. Chybějící závislost bývá chyba v metadatech
+          // (např. Zoomify uvádí KotlinLangForge pro Forge i u Fabric verze) a hra jede i bez ní.
+          if (!m.dependency) missing.push(m);
           return;
         }
         if (!files.has(v.project_id)) files.set(v.project_id, fileEntry(v, m));
