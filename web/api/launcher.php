@@ -24,6 +24,10 @@ if (is_file($file)) {
 
 $config = [
     'news' => $news,
+    // Odkazy v boční liště launcheru.
+    'links' => [
+        'discord' => 'https://discord.gg/Q7PUz7ARsS',
+    ],
     // Resource pack serveru – launcher ho stáhne předem, aby se při připojení nestahoval.
     // Musí to být stejná adresa jako v ItemsAdder/config.yml (pack_hosting.external_host.url).
     'resourcePack' => [
