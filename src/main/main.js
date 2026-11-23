@@ -500,6 +500,8 @@ function setupUpdater() {
   autoUpdater.on('update-downloaded', (i) => send('update', { state: 'ready', version: i.version }));
   autoUpdater.on('error', () => {});
   autoUpdater.checkForUpdates().catch(() => {});
+  // Kontrola i za běhu (každou hodinu), ne jen při startu.
+  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 60 * 60 * 1000);
   setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 60 * 60 * 1000);
 }
 
