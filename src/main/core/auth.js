@@ -95,7 +95,7 @@ async function minecraft(uhs, xstsToken) {
     });
   } catch (e) {
     if (e.status === 403 && /Invalid app registration/i.test(e.body || e.message)) {
-      throw new Error('Přihlášení do Minecraftu zatím čeká na schválení launcheru od Mojangu. Zkus to prosím za pár dní, mezitím hraj přes klasický Minecraft Launcher.');
+      throw new Error('Mojang přihlášení přes launcher zatím nepustil (schválení se může pár hodin propisovat). Zkus to prosím později, mezitím hraj přes klasický Minecraft Launcher.');
     }
     if (e.status === 429) throw new Error('Příliš mnoho pokusů o přihlášení. Zkus to znovu za pár minut.');
     throw e;

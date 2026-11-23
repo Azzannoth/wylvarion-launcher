@@ -107,3 +107,39 @@ test('pkce + authorizeUrl', () => {
   assert.equal(u.searchParams.get('code_challenge_method'), 'S256');
   assert.match(u.searchParams.get('scope'), /XboxLive\.signin/);
 });
+
+test('servers.dat: přidá Wylvarion s povoleným resource packem a zachová ostatní servery', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  const { ensureServer, _nbt } = require('../src/main/core/servers');
+  const { reader, writer, T } = _nbt;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wylsrv-'));
+  const server = { name: 'Wylvarion', host: 'play.wylvarion.cz', port: 25565 };
+  const read = () => reader(fs.readFileSync(path.join(dir, 'servers.dat'))).root().value.find((e) => e.name === 'servers').value.items;
+  const field = (s, n) => (s.find((e) => e.name === n) || {}).value;
+
+  // nový soubor
+  assert.equal(ensureServer(dir, server), true);
+  let items = read();
+  assert.equal(items.length, 1);
+  assert.equal(field(items[0], 'ip'), 'play.wylvarion.cz');
+  assert.equal(field(items[0], 'acceptTextures'), 1);
+  assert.equal(ensureServer(dir, server), false);
+
+  // existující seznam s jiným serverem a skrytým záznamem z Quick Play
+  const other = [{ type: T.STRING, name: 'name', value: 'Jiný' }, { type: T.STRING, name: 'ip', value: 'mc.example.com' }, { type: T.STRING, name: 'icon', value: 'abc' }];
+  const hidden = [{ type: T.STRING, name: 'name', value: 'Minecraft Server' }, { type: T.STRING, name: 'ip', value: 'play.wylvarion.cz' }, { type: T.BYTE, name: 'hidden', value: 1 }];
+  const buf = writer().root('', [{ type: T.LIST, name: 'servers', value: { type: T.COMPOUND, items: [other, hidden] } }]);
+  fs.writeFileSync(path.join(dir, 'servers.dat'), buf);
+  assert.equal(ensureServer(dir, server), true);
+  items = read();
+  assert.equal(items.length, 2);
+  assert.equal(field(items[0], 'icon'), 'abc');
+  assert.equal(field(items[1], 'acceptTextures'), 1);
+  assert.equal(field(items[1], 'hidden'), 1);
+  // zápis a čtení dají stejná data
+  const again = fs.readFileSync(path.join(dir, 'servers.dat'));
+  const r = reader(again).root();
+  assert.deepEqual(writer().root(r.name, r.value), again);
+});

@@ -16,6 +16,7 @@ const { buildCommand, launch, redact } = require('./core/launch');
 const { ping } = require('./core/status');
 const { getJson } = require('./core/http');
 const { defaultRoot, layout } = require('./core/paths');
+const servers = require('./core/servers');
 
 let win = null;
 let config = null;
@@ -180,6 +181,13 @@ async function play() {
       } catch (e) {
         send('notice', `Shader se nepodařilo nastavit: ${e.message}`);
       }
+    }
+
+    // Server v seznamu serverů s povoleným resource packem (stáhne se sám, bez dotazu).
+    try {
+      servers.ensureServer(d.game, config.server);
+    } catch (e) {
+      send('notice', `Nepodařilo se nastavit seznam serverů: ${e.message}`);
     }
 
     const component = (installed.vanilla.javaVersion && installed.vanilla.javaVersion.component) || 'java-runtime-epsilon';
