@@ -135,9 +135,11 @@ test('servers.dat: přidá Wylvarion s povoleným resource packem a zachová ost
   assert.equal(ensureServer(dir, server), true);
   items = read();
   assert.equal(items.length, 2);
-  assert.equal(field(items[0], 'icon'), 'abc');
-  assert.equal(field(items[1], 'acceptTextures'), 1);
-  assert.equal(field(items[1], 'hidden'), 1);
+  // skrytý záznam z Quick Play se zviditelní a přesune nahoru, ostatní servery zůstanou
+  assert.equal(field(items[0], 'ip'), 'play.wylvarion.cz');
+  assert.equal(field(items[0], 'acceptTextures'), 1);
+  assert.equal(field(items[0], 'hidden'), undefined);
+  assert.equal(field(items[1], 'icon'), 'abc');
   // zápis a čtení dají stejná data
   const again = fs.readFileSync(path.join(dir, 'servers.dat'));
   const r = reader(again).root();
@@ -237,4 +239,16 @@ test('mody: přesná verze předepsaná závislostí má přednost (Iris → Sod
   } finally {
     global.fetch = realFetch;
   }
+});
+
+test('buildCommand: bez přímého připojení se hra otevře v menu', () => {
+  const { buildCommand } = require('../src/main/core/launch');
+  const install = {
+    vanilla: { id: '26.3', mainClass: 'M', assetIndex: { id: '1' }, arguments: { jvm: [], game: [{ rules: [{ action: 'allow', features: { is_quick_play_multiplayer: true } }], value: ['--quickPlayMultiplayer', '${quickPlayMultiplayer}'] }] } },
+    fabric: null, clientJar: 'c.jar', libs: { classpath: [] }, nativesDir: 'n', logging: null
+  };
+  const dirs = { game: 'g', assets: 'a', libraries: 'l' };
+  const base = { install, dirs, account: { name: 'S', uuid: 'u', accessToken: 't' }, server: { host: 'play.wylvarion.cz', port: 25565 }, env: { name: 'linux', arch: 'x64' } };
+  assert.ok(!buildCommand({ ...base, quickPlay: false }).args.includes('--quickPlayMultiplayer'));
+  assert.ok(buildCommand({ ...base, quickPlay: true }).args.includes('--quickPlayMultiplayer'));
 });

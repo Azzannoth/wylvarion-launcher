@@ -201,6 +201,7 @@ async function play() {
       server: config.server,
       memoryMb: settings.memoryMb || recommendedMemory(),
       launcherVersion: app.getVersion(),
+      quickPlay: Boolean(settings.autoJoin),
       width: settings.width,
       height: settings.height
     });
@@ -415,7 +416,7 @@ function setupIpc() {
   });
 
   ipcMain.handle('settings:set', (e, patch) => {
-    const allowedKeys = ['memoryMb', 'shaderPreset', 'optionalMods', 'afterLaunch', 'width', 'height', 'root', 'firstRunDone'];
+    const allowedKeys = ['memoryMb', 'shaderPreset', 'optionalMods', 'afterLaunch', 'autoJoin', 'width', 'height', 'root', 'firstRunDone'];
     for (const k of allowedKeys) if (k in patch) settings[k] = patch[k];
     store.saveSettings(settings);
     return settings;

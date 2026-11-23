@@ -26,7 +26,8 @@ function buildCommand(p) {
     has_custom_resolution: Boolean(width && height),
     has_quick_plays_support: false,
     is_quick_play_singleplayer: false,
-    is_quick_play_multiplayer: Boolean(server && server.host),
+    // quickPlay=false: hra se otevře v hlavním menu (Wylvarion je první v seznamu serverů)
+    is_quick_play_multiplayer: Boolean(server && server.host) && p.quickPlay !== false,
     is_quick_play_realms: false
   };
 

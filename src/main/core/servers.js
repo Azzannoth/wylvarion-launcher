@@ -122,6 +122,14 @@ function ensureServer(gameDir, server) {
     items.unshift(entry);
     changed = true;
   }
+  // Záznam, který si hra uložila při Quick Play, je skrytý – v seznamu serverů by nebyl vidět.
+  const hiddenIdx = entry.findIndex((e) => e.name === 'hidden');
+  if (hiddenIdx !== -1) {
+    entry.splice(hiddenIdx, 1);
+    items.splice(items.indexOf(entry), 1);
+    items.unshift(entry);
+    changed = true;
+  }
   const at = get(entry, 'acceptTextures');
   if (!at || at.value !== 1) {
     set(entry, T.BYTE, 'acceptTextures', 1);

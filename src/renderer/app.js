@@ -547,6 +547,9 @@ function renderSettings() {
   $('#shader').value = s.shaderPreset || 'auto';
   $('#shader').onchange = () => wyl.setSettings({ shaderPreset: $('#shader').value });
 
+  $('#autoJoin').checked = Boolean(s.autoJoin);
+  $('#autoJoin').onchange = () => wyl.setSettings({ autoJoin: $('#autoJoin').checked });
+
   $('#afterLaunch').value = s.afterLaunch || 'hide';
   $('#afterLaunch').onchange = () => wyl.setSettings({ afterLaunch: $('#afterLaunch').value });
 

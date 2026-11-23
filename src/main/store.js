@@ -11,6 +11,7 @@ const DEFAULTS = {
   shaderPreset: 'auto',
   optionalMods: {},
   afterLaunch: 'hide',
+  autoJoin: false,
   width: null,
   height: null,
   firstRunDone: false
