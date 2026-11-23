@@ -24,16 +24,57 @@ function primaryFile(version) {
   return version.files.find((f) => f.primary) || version.files[0];
 }
 
+async function versionById(id) {
+  return getJson(`${API}/version/${encodeURIComponent(id)}`);
+}
+
+/** Konkrétní verze projektu podle ID verze nebo čísla verze (připnutí v konfiguraci). */
+async function pinnedVersion(projectId, version) {
+  try {
+    return await versionById(version);
+  } catch {
+    return getJson(`${API}/project/${encodeURIComponent(projectId)}/version/${encodeURIComponent(version)}`);
+  }
+}
+
+function fileEntry(v, m) {
+  const f = primaryFile(v);
+  return {
+    projectId: v.project_id,
+    versionId: v.id,
+    slug: m.id,
+    name: m.name,
+    version: v.version_number,
+    filename: f.filename,
+    url: f.url,
+    sha1: f.hashes && f.hashes.sha1,
+    size: f.size
+  };
+}
+
 /**
  * Sestaví seznam souborů k instalaci včetně povinných závislostí.
- * wanted: [{id, name, required}] – vybrané mody.
- * Vrací { files: [{projectId, name, filename, url, sha1, size}], missing: [{id, name}] }.
+ * wanted: [{id, name, required, version?}] – vybrané mody; version připne konkrétní verzi.
+ * Když mod v závislostech předepisuje přesnou verzi jiného modu (např. Iris → Sodium),
+ * použije se ta, ne nejnovější. Jinak by se hra nespustila kvůli nekompatibilitě.
+ * Vrací { files: [{projectId, versionId, name, filename, url, sha1, size}], missing: [{id, name}] }.
  */
 async function resolve(wanted, gameVersion, loader = 'fabric') {
   const files = new Map(); // projectId -> soubor
   const missing = [];
-  const queue = wanted.map((m) => ({ id: m.id, name: m.name || m.id }));
+  const pins = new Map(); // projectId -> versionId předepsané závislostí
+  const queue = wanted.map((m) => ({ id: m.id, name: m.name || m.id, version: m.version }));
   const seen = new Set();
+
+  const noteDeps = (v) => {
+    for (const dep of v.dependencies || []) {
+      if (dep.dependency_type !== 'required') continue;
+      if (dep.version_id && dep.project_id) pins.set(dep.project_id, dep.version_id);
+      if (dep.project_id && !seen.has(dep.project_id) && !files.has(dep.project_id)) {
+        queue.push({ id: dep.project_id, name: dep.project_id, dependency: true });
+      }
+    }
+  };
 
   while (queue.length) {
     const batch = queue.splice(0, 8).filter((m) => !seen.has(m.id));
@@ -42,7 +83,7 @@ async function resolve(wanted, gameVersion, loader = 'fabric') {
       batch.map(async (m) => {
         let v;
         try {
-          v = await latestVersion(m.id, gameVersion, [loader]);
+          v = m.version ? await pinnedVersion(m.id, m.version) : await latestVersion(m.id, gameVersion, [loader]);
         } catch {
           v = null;
         }
@@ -50,24 +91,24 @@ async function resolve(wanted, gameVersion, loader = 'fabric') {
           missing.push(m);
           return;
         }
-        const f = primaryFile(v);
-        files.set(v.project_id, {
-          projectId: v.project_id,
-          slug: m.id,
-          name: m.name,
-          version: v.version_number,
-          filename: f.filename,
-          url: f.url,
-          sha1: f.hashes && f.hashes.sha1,
-          size: f.size
-        });
-        for (const dep of v.dependencies || []) {
-          if (dep.dependency_type === 'required' && dep.project_id && !seen.has(dep.project_id) && !files.has(dep.project_id)) {
-            queue.push({ id: dep.project_id, name: dep.project_id, dependency: true });
-          }
-        }
+        if (!files.has(v.project_id)) files.set(v.project_id, fileEntry(v, m));
+        seen.add(v.project_id);
+        noteDeps(v);
       })
     );
+  }
+
+  // Přesné verze, které si vyžádaly závislosti.
+  for (const [projectId, versionId] of pins) {
+    const cur = files.get(projectId);
+    if (!cur || cur.versionId === versionId) continue;
+    try {
+      const v = await versionById(versionId);
+      if (!(v.loaders || []).includes(loader) || !(v.game_versions || []).includes(gameVersion)) continue;
+      files.set(projectId, fileEntry(v, { id: cur.slug, name: cur.name }));
+    } catch {
+      /* předepsanou verzi se nepodařilo načíst, necháme nejnovější */
+    }
   }
   return { files: [...files.values()], missing };
 }

@@ -197,3 +197,44 @@ test('skins: kontrola PNG, knihovna a odeslání na Mojang API', async () => {
     global.fetch = realFetch;
   }
 });
+
+test('mody: přesná verze předepsaná závislostí má přednost (Iris → Sodium 0.9.2)', async () => {
+  const { resolve } = require('../src/main/core/mods');
+  const ver = (id, project, number, deps = []) => ({
+    id, project_id: project, version_number: number, version_type: 'release', loaders: ['fabric'], game_versions: ['26.3'],
+    dependencies: deps, files: [{ primary: true, filename: `${project}-${number}.jar`, url: `https://cdn/${id}`, hashes: { sha1: id }, size: 1 }]
+  });
+  const versions = {
+    sodiumNew: ver('tFcTKXDx', 'AANobbMI', '0.9.3'),
+    sodiumOld: ver('bAZQdGpg', 'AANobbMI', '0.9.2'),
+    iris: ver('irisV', 'YL57xq9U', '1.11.7', [{ project_id: 'AANobbMI', version_id: 'bAZQdGpg', dependency_type: 'required' }]),
+    fapi: ver('fapiV', 'P7dR8mSH', '1.0'),
+    zoom: ver('zoomOld', 'w7ThoJFB', '2.0')
+  };
+  const realFetch = global.fetch;
+  global.fetch = async (url) => {
+    const u = decodeURIComponent(url);
+    let body;
+    if (u.includes('/version/bAZQdGpg')) body = versions.sodiumOld;
+    else if (u.includes('/project/sodium/version') || u.includes('/project/AANobbMI/version')) body = [versions.sodiumNew, versions.sodiumOld];
+    else if (u.includes('/project/iris/version')) body = [versions.iris];
+    else if (u.includes('/project/fabric-api/version')) body = [versions.fapi];
+    else if (u.includes('/version/zoomOld')) body = versions.zoom;
+    else return new Response('not found', { status: 404 });
+    return new Response(JSON.stringify(body), { status: 200 });
+  };
+  try {
+    const { files, missing } = await resolve(
+      [{ id: 'fabric-api' }, { id: 'sodium' }, { id: 'iris' }, { id: 'zoomify', version: 'zoomOld' }],
+      '26.3'
+    );
+    const by = Object.fromEntries(files.map((f) => [f.projectId, f.version]));
+    assert.equal(by.AANobbMI, '0.9.2');
+    assert.equal(by.YL57xq9U, '1.11.7');
+    assert.equal(by.w7ThoJFB, '2.0');
+    assert.equal(files.length, 4);
+    assert.equal(missing.length, 0);
+  } finally {
+    global.fetch = realFetch;
+  }
+});
