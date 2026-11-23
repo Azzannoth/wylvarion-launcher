@@ -1,7 +1,7 @@
 {
   "name": "wylvarion-launcher",
   "productName": "Wylvarion Launcher",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Oficiální launcher Minecraft serveru Wylvarion – jedním kliknutím stáhne hru, Javu i mody a připojí tě na play.wylvarion.cz.",
   "main": "src/main/main.js",
   "author": "Wylvarion",

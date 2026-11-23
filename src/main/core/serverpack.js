@@ -168,14 +168,15 @@ function installLocal(dirs, master) {
     lines[idx] = line;
     changed = true;
   }
-  // kdyby ho hra dřív označila jako nekompatibilní, povolíme ho
+  // Pack nesmí být v seznamu nekompatibilních: když je kompatibilní, Minecraft ho
+  // z toho seznamu vyřadí a zároveň ho nezapne (Options.loadSelectedResourcePacks).
   const inc = lines.findIndex((l) => l.startsWith('incompatibleResourcePacks:'));
-  const incList = inc === -1 ? [] : parseList(lines[inc].slice('incompatibleResourcePacks:'.length));
-  if (!incList.includes(LOCAL_ID)) {
-    const l2 = `incompatibleResourcePacks:${JSON.stringify([...incList, LOCAL_ID])}`;
-    if (inc === -1) lines.push(l2);
-    else lines[inc] = l2;
-    changed = true;
+  if (inc !== -1) {
+    const incList = parseList(lines[inc].slice('incompatibleResourcePacks:'.length));
+    if (incList.includes(LOCAL_ID)) {
+      lines[inc] = `incompatibleResourcePacks:${JSON.stringify(incList.filter((p) => p !== LOCAL_ID))}`;
+      changed = true;
+    }
   }
   if (changed) fs.writeFileSync(optionsFile, lines.join('\n') + '\n');
   return { changed: changed || !same };

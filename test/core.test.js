@@ -322,7 +322,12 @@ test('serverpack: pack se zapne jako lokální resource pack a vlastní packy hr
   assert.match(opts, /^resourcePacks:\["vanilla","file\/Faithful\.zip","file\/wylvarion-server\.zip"\]$/m);
   assert.match(opts, /^fov:0\.5$/m);
   assert.match(opts, /^version:4000$/m);
-  assert.ok(opts.includes(`incompatibleResourcePacks:["${LOCAL_ID}"]`));
+  assert.ok(!opts.includes('incompatibleResourcePacks'));
+  // starší verze launcheru ho dala mezi nekompatibilní – to se musí odstranit, jinak ho hra nezapne
+  fs.writeFileSync(path.join(dirs.game, 'options.txt'), `resourcePacks:["vanilla","${LOCAL_ID}"]\nincompatibleResourcePacks:["${LOCAL_ID}","file/Old.zip"]\n`);
+  installLocal(dirs, master);
+  opts = fs.readFileSync(path.join(dirs.game, 'options.txt'), 'utf8');
+  assert.match(opts, /^incompatibleResourcePacks:\["file\/Old\.zip"\]$/m);
 });
 
 test('servers.dat: s lokálním packem se pack od serveru odmítne', () => {
