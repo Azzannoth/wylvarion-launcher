@@ -1,0 +1,54 @@
+name: Microsoft Store package
+
+# Sestaví balíček pro Microsoft Store (MSIX/.appx). Microsoft ho při schválení podepíše.
+# Spustí se po vydání nové verze, ručně v Actions, nebo pushem do větve store-request.
+# Výsledek: artifact „microsoft-store-package“ a větev store-package (soubor rozdělený
+# na části do 90 MB + manifest.json), odkud ho jde nahrát do Partner Center z prohlížeče.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  push:
+    branches: [store-request]
+
+permissions:
+  contents: write
+
+jobs:
+  appx:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build Microsoft Store package
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --win appx --x64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: microsoft-store-package
+          path: dist/*.appx
+      - name: Publish to store-package branch
+        shell: bash
+        run: |
+          set -e
+          APPX=$(ls dist/*.appx | head -n1)
+          NAME=$(basename "$APPX")
+          VERSION=$(node -p "require('./package.json').version")
+          SIZE=$(stat -c %s "$APPX")
+          SHA=$(sha256sum "$APPX" | cut -d' ' -f1)
+          mkdir -p /tmp/pkg && cd /tmp/pkg
+          split -b 90m -d -a 2 "$GITHUB_WORKSPACE/$APPX" part_
+          PARTS=$(ls part_* | node -e "console.log(JSON.stringify(require('fs').readFileSync(0,'utf8').trim().split(/\s+/)))")
+          echo "{\"name\":\"$NAME\",\"version\":\"$VERSION\",\"size\":$SIZE,\"sha256\":\"$SHA\",\"parts\":$PARTS}" > manifest.json
+          cat manifest.json
+          git init -q -b store-package
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Store package $VERSION"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" store-package
