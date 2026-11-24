@@ -1,0 +1,114 @@
+
+/* ===================== Banlist + profil hráče ===================== */
+.wb{display:flex;flex-direction:column;gap:18px;}
+.wb-search{display:flex;align-items:center;gap:12px;background:var(--stone);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 16px;transition:border-color .2s, box-shadow .2s;}
+.wb-search:focus-within{border-color:rgba(192,132,252,.55);box-shadow:0 0 0 4px rgba(168,85,247,.12);}
+.wb-search svg{width:18px;height:18px;flex:none;fill:none;stroke:var(--parchment-dim);stroke-width:2.2;stroke-linecap:round;}
+.wb-search input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#fff;font:600 15px var(--font-body);padding:10px 0;}
+.wb-search input::placeholder{color:var(--parchment-dim);}
+.wb-btn{border:0;border-radius:10px;padding:12px 26px;font:800 13px var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;
+  background:linear-gradient(135deg,var(--violet) 0%,var(--moss) 55%,var(--moss-dim) 100%);box-shadow:0 6px 22px -8px rgba(168,85,247,.8),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s, filter .15s;}
+.wb-btn:hover{filter:brightness(1.1);transform:translateY(-1px);}
+
+.wb-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.wb-tab{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 12px;border-radius:12px;cursor:pointer;
+  background:var(--stone);border:1px solid var(--line);color:#fff;font:800 14px var(--font-body);letter-spacing:.06em;text-transform:uppercase;transition:all .2s;}
+.wb-tab .ic{width:20px;height:20px;}
+.wb-tab:hover{background:var(--stone-2);border-color:rgba(192,132,252,.35);}
+.wb-count{min-width:34px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.08);font-size:13px;letter-spacing:0;}
+.wb-tab.is-active{background:linear-gradient(135deg,rgba(168,85,247,.32),rgba(91,200,255,.12));border-color:rgba(192,132,252,.6);box-shadow:0 8px 26px -12px rgba(168,85,247,.9);}
+.wb-tab.is-active .wb-count{background:rgba(192,132,252,.35);color:#fff;}
+
+.wb-card{background:linear-gradient(180deg,var(--stone-2),var(--stone));border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;transition:opacity .2s;}
+.wb-card.is-loading{opacity:.55;}
+.wb-table{width:100%;border-collapse:collapse;color:var(--parchment-dim);font-size:14px;}
+.wb-table th{padding:16px 18px;text-align:left;font:800 12px var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--violet);border-bottom:1px solid var(--line);background:rgba(10,7,20,.35);}
+.wb-table td{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle;}
+.wb-table tbody tr{transition:background .15s;}
+.wb-table tbody tr:hover{background:rgba(168,85,247,.07);}
+.wb-table tbody tr:last-child td{border-bottom:0;}
+.wb-player{display:flex;align-items:center;gap:12px;background:none;border:0;padding:0;cursor:pointer;color:#fff;font:800 15px var(--font-body);text-align:left;}
+.wb-player img{width:36px;height:36px;border-radius:8px;image-rendering:pixelated;box-shadow:0 0 0 2px rgba(192,132,252,.25);transition:transform .2s, box-shadow .2s;}
+.wb-player:hover img{transform:scale(1.12) rotate(-3deg);box-shadow:0 0 0 2px var(--violet),0 6px 18px -4px rgba(168,85,247,.8);}
+.wb-player:hover span{color:var(--violet);}
+.wb-uuid{font-size:12px;font-weight:700;word-break:break-all;max-width:170px;color:var(--parchment-dim);}
+.wb-reason{color:#e9e2f3;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.wb-date{white-space:nowrap;color:#e9e2f3;}
+.wb-date small{display:block;color:var(--parchment-dim);font-size:12px;}
+.wb-empty{padding:34px 18px !important;text-align:center;color:var(--parchment-dim);}
+.wb-err{color:#ff8a78;}
+
+.wb-pill{display:inline-block;padding:6px 14px;border-radius:999px;font:800 11px var(--font-body);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;border:1px solid transparent;}
+.wb-pill.active{color:#ff8a78;background:rgba(193,67,46,.16);border-color:rgba(193,67,46,.45);}
+.wb-pill.removed{color:#c9c2d6;background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.16);}
+.wb-pill.expired{color:#86e3b1;background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);}
+.wb-pill.kick{color:var(--ember);background:rgba(232,162,61,.12);border-color:rgba(232,162,61,.35);}
+
+.wb-pager{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;}
+.wb-pager:empty{display:none;}
+.wb-page{min-width:42px;height:42px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--stone);color:#fff;font:800 14px var(--font-body);cursor:pointer;transition:all .15s;}
+.wb-page:hover:not(:disabled){border-color:rgba(192,132,252,.5);background:var(--stone-2);}
+.wb-page.is-active{background:linear-gradient(135deg,var(--violet),var(--moss-dim));border-color:transparent;}
+.wb-page:disabled{opacity:.35;cursor:default;}
+.wb-gap{align-self:center;color:var(--parchment-dim);}
+.wb-appeal{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;color:var(--parchment-dim);font-weight:600;}
+
+body.wp-open{overflow:hidden;}
+.wp-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow-y:auto;
+  background:rgba(5,3,12,.72);backdrop-filter:blur(8px);animation:wpFade .2s ease;}
+.wp-overlay[hidden]{display:none;}
+.wp-modal{position:relative;width:min(920px,100%);border-radius:24px;padding:34px;border:1px solid rgba(192,132,252,.3);
+  background:radial-gradient(ellipse 700px 320px at 20% 0%,rgba(168,85,247,.25),transparent 70%),radial-gradient(ellipse 500px 300px at 100% 0%,rgba(91,200,255,.12),transparent 70%),var(--ink);
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.03) inset;animation:wpPop .25s cubic-bezier(.2,.9,.3,1.2);}
+.wp-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--stone);color:#fff;font-size:24px;line-height:1;cursor:pointer;}
+.wp-close:hover{background:var(--stone-2);border-color:var(--violet);}
+.wp-loading{display:flex;align-items:center;justify-content:center;gap:14px;padding:60px 0;color:var(--parchment-dim);font-weight:700;}
+.wp-loading img{width:40px;height:40px;border-radius:8px;image-rendering:pixelated;animation:wpBob 1s ease-in-out infinite;}
+.wp-hero{display:grid;grid-template-columns:220px 1fr;gap:34px;align-items:center;}
+.wp-skin{position:relative;height:260px;border-radius:18px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;
+  background:radial-gradient(circle at 50% 60%,rgba(168,85,247,.35),transparent 65%),var(--stone);border:2px solid rgba(192,132,252,.35);box-shadow:0 0 0 6px rgba(168,85,247,.08);}
+.wp-skin img{height:236px;image-rendering:pixelated;filter:drop-shadow(0 10px 16px rgba(0,0,0,.6));transform:translateY(8px);}
+.wp-name{margin:0;font:400 clamp(40px,6vw,64px)/1 var(--font-display);color:#fff;letter-spacing:.02em;word-break:break-all;text-shadow:0 4px 30px rgba(168,85,247,.55);}
+.wp-state{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:6px 14px;border-radius:999px;font:800 13px var(--font-body);}
+.wp-state::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor;}
+.wp-state.clean{color:#6ee7a8;background:rgba(52,211,153,.1);}
+.wp-state.ban{color:#ff8a78;background:rgba(193,67,46,.15);}
+.wp-state.mute{color:var(--ember);background:rgba(232,162,61,.13);}
+.wp-names{margin-top:12px;color:var(--parchment-dim);font-size:13px;font-weight:600;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.wp-names span{padding:3px 9px;border-radius:8px;background:var(--stone-2);color:#e9e2f3;}
+.wp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px;}
+.wp-stat{padding:16px;border-radius:14px;background:var(--stone);border:1px solid var(--line);}
+.wp-stat-l{font:800 11px var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--violet);}
+.wp-stat-v{margin-top:6px;font:800 20px var(--font-body);color:#fff;}
+.wp-stat-s{margin-top:2px;font-size:12.5px;color:var(--parchment-dim);font-weight:600;}
+.wp-counts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:28px;}
+.wp-count{padding:14px;border-radius:14px;background:var(--stone);border:1px solid var(--line);text-align:center;}
+.wp-count b{display:block;font:400 34px/1 var(--font-display);}
+.wp-count span{font:800 11px var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--parchment-dim);}
+.t-ban b,.wp-type.t-ban{color:#ff8a78;} .t-mute b,.wp-type.t-mute{color:var(--moonlight);}
+.t-kick b,.wp-type.t-kick{color:var(--ember);} .t-warn b,.wp-type.t-warn{color:var(--violet);}
+.wp-h{margin:28px 0 12px;font:800 16px var(--font-body);color:#fff;}
+.wp-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;padding-right:4px;}
+.wp-item{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;background:var(--stone);border:1px solid rgba(255,255,255,.05);}
+.wp-type{flex:none;width:58px;text-align:center;padding:5px 0;border-radius:8px;background:rgba(255,255,255,.05);font:800 11px var(--font-body);letter-spacing:.08em;text-transform:uppercase;}
+.wp-item-main{flex:1;min-width:0;}
+.wp-item-reason{color:#fff;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.wp-item-meta{color:var(--parchment-dim);font-size:12.5px;margin-top:2px;}
+.wp-clean{padding:22px;border-radius:14px;text-align:center;color:#6ee7a8;font-weight:700;background:rgba(52,211,153,.07);border:1px dashed rgba(52,211,153,.3);}
+@keyframes wpFade{from{opacity:0}}
+@keyframes wpPop{from{opacity:0;transform:translateY(16px) scale(.97)}}
+@keyframes wpBob{50%{transform:translateY(-6px)}}
+
+@media (max-width:820px){
+  .wb-tabs{grid-template-columns:repeat(2,1fr);}
+  .wb-hide-m{display:none;}
+  .wb-table th,.wb-table td{padding:12px 10px;}
+  .wb-reason{max-width:140px;}
+  .wp-modal{padding:24px 18px;}
+  .wp-hero{grid-template-columns:1fr;gap:20px;text-align:center;}
+  .wp-skin{height:220px;width:200px;margin:0 auto;}
+  .wp-skin img{height:200px;}
+  .wp-names{justify-content:center;}
+  .wp-stats{grid-template-columns:1fr;}
+  .wp-counts{grid-template-columns:repeat(2,1fr);}
+}
