@@ -1,7 +1,7 @@
 {
   "name": "wylvarion-launcher",
   "productName": "Wylvarion Launcher",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Oficiální launcher Minecraft serveru Wylvarion – jedním kliknutím stáhne hru, Javu i mody a připojí tě na play.wylvarion.cz.",
   "main": "src/main/main.js",
   "author": "Wylvarion",
@@ -93,7 +93,10 @@
       ],
       "category": "public.app-category.games",
       "icon": "build/icon.png",
-      "artifactName": "Wylvarion-Launcher-${version}-${arch}.${ext}"
+      "artifactName": "Wylvarion-Launcher-${version}-${arch}.${ext}",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     },
     "appx": {
       "applicationId": "WylvarionLauncher",
