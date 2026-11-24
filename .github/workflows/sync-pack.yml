@@ -1,0 +1,40 @@
+name: Server resource pack sync
+# Stáhne aktuální ItemsAdder resource pack z webu (adresa a SHA-1 v pack-request.txt na větvi pack-request)
+# a uloží ho na větev "resourcepack", odkud ho hra i launcher stahují:
+# https://raw.githubusercontent.com/Azzannoth/wylvarion-launcher/resourcepack/generated.zip
+on:
+  push:
+    branches: [pack-request]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: pack-sync
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pack-request
+          path: req
+      - name: Download pack
+        run: |
+          URL=$(sed -n 1p req/pack-request.txt | tr -d '\r')
+          SHA=$(sed -n 2p req/pack-request.txt | tr -d '\r')
+          curl -fL --retry 3 -o generated.zip "$URL"
+          echo "$SHA  generated.zip" | sha1sum -c -
+          unzip -tq generated.zip
+          ls -la generated.zip
+      - name: Publish to resourcepack branch
+        run: |
+          mkdir out && cd out
+          git init -q -b resourcepack
+          cp ../generated.zip .
+          sha1sum generated.zip | cut -d' ' -f1 > generated.zip.sha1
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add generated.zip generated.zip.sha1
+          git commit -qm "Resource pack $(cat generated.zip.sha1)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" resourcepack
