@@ -97,4 +97,26 @@ async function prepare(dirs, intro, choice, progress = () => {}) {
   return { pack: manifest.id, downloaded };
 }
 
-module.exports = { prepare, selectPack, MOJANG_PACK, FILE_NAME, _sha1: (b) => crypto.createHash('sha1').update(b).digest('hex') };
+/**
+ * Pozadí menu (panorama z intra) jako resource pack. Stáhne se jen při změně, vrací cestu k souboru nebo null.
+ * intro: { manifest }  – v manifestu je pole menu: { file, size, sha1 }
+ */
+async function prepareMenu(dirs, intro) {
+  if (!intro || !intro.manifest) return null;
+  const dest = path.join(dirs.game, 'resourcepacks', MENU_FILE);
+  let manifest;
+  try {
+    manifest = await getJson(intro.manifest, { timeout: 15000 });
+  } catch {
+    return fs.existsSync(dest) ? dest : null;
+  }
+  const m = manifest && manifest.menu;
+  if (!m) return null;
+  const base = intro.manifest.replace(/[^/]*$/, '');
+  await download(base + m.file, dest, { sha1: m.sha1, size: m.size });
+  return dest;
+}
+
+const MENU_FILE = 'wylvarion-menu.zip';
+
+module.exports = { prepare, prepareMenu, MENU_FILE, selectPack, MOJANG_PACK, FILE_NAME, _sha1: (b) => crypto.createHash('sha1').update(b).digest('hex') };

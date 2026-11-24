@@ -410,3 +410,24 @@ test('překlady: všechny jazyky mají stejné klíče a HTML používá jen exi
   const missing = [...new Set(used)].filter((k) => !k.endsWith('.') && !(k in I18N.cs));
   assert.deepEqual(missing, []);
 });
+
+test('pozadí menu: pack se zapne pod packem serveru, Dynamic FPS nenechá okno na 1 FPS', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const { enablePack, tuneDynamicFps } = require('../src/main/core/options');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wylmenu-'));
+  fs.writeFileSync(path.join(dir, 'options.txt'), 'resourcePacks:["vanilla","file/Moje.zip","file/wylvarion-server.zip"]\n');
+  assert.equal(enablePack(dir, 'file/wylvarion-menu.zip', 'file/wylvarion-server.zip'), true);
+  assert.equal(fs.readFileSync(path.join(dir, 'options.txt'), 'utf8'), 'resourcePacks:["vanilla","file/Moje.zip","file/wylvarion-menu.zip","file/wylvarion-server.zip"]\n');
+  assert.equal(enablePack(dir, 'file/wylvarion-menu.zip', 'file/wylvarion-server.zip'), false);
+
+  assert.equal(tuneDynamicFps(dir), false); // config ještě neexistuje
+  fs.mkdirSync(path.join(dir, 'config'));
+  fs.writeFileSync(path.join(dir, 'config', 'dynamic_fps.json'), JSON.stringify({ enabled: true, states: { unfocused: { frame_rate_target: 1, show_toasts: true }, invisible: { frame_rate_target: 0 } } }));
+  assert.equal(tuneDynamicFps(dir), true);
+  const cfg = JSON.parse(fs.readFileSync(path.join(dir, 'config', 'dynamic_fps.json'), 'utf8'));
+  assert.equal(cfg.states.unfocused.frame_rate_target, 60);
+  assert.equal(cfg.states.unfocused.show_toasts, true);
+  assert.equal(cfg.states.invisible.frame_rate_target, 0);
+  assert.equal(tuneDynamicFps(dir), false);
+});

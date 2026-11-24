@@ -20,7 +20,7 @@ const servers = require('./core/servers');
 const skins = require('./core/skins');
 const serverpack = require('./core/serverpack');
 const intro = require('./core/intro');
-const { setOptions, GAME_LANG } = require('./core/options');
+const { setOptions, enablePack, tuneDynamicFps, GAME_LANG } = require('./core/options');
 
 let win = null;
 let config = null;
@@ -239,6 +239,20 @@ async function play() {
       } catch (e) {
         send('notice', { key: 'notice.intro' });
       }
+    }
+
+    // Pozadí menu (panorama z intra) – resource pack pod packem serveru.
+    try {
+      if (await intro.prepareMenu(d, config.intro)) enablePack(d.game, `file/${intro.MENU_FILE}`, 'file/wylvarion-server.zip');
+    } catch {
+      /* není podstatné */
+    }
+
+    // Dynamic FPS nesmí v neaktivním okně srazit FPS na 1 (intro a menu by trhaly).
+    try {
+      tuneDynamicFps(d.game);
+    } catch {
+      /* není podstatné */
     }
 
     // Jazyk hry a celá obrazovka – zapisujeme jen po změně v launcheru, ať nepřepisujeme volby ze hry.

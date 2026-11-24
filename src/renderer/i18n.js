@@ -626,7 +626,8 @@ const MOD_DESC = {
     'dynamic-fps': 'Saves power when the game is in the background',
     fpsdisplay: 'FPS on screen',
     'armor-hud': 'Armor durability on screen',
-    'reimagined-intro': 'Animated intro when the game starts (off on low-end PCs)'
+    'reimagined-intro': 'Animated intro when the game starts (off on low-end PCs)',
+    patpat: 'Pet players, pets and mobs (Shift + right click)'
   },
   sk: {
     sodium: 'Oveľa vyššie FPS',
@@ -647,7 +648,8 @@ const MOD_DESC = {
     'dynamic-fps': 'Šetrí výkon, keď hra nie je v popredí',
     fpsdisplay: 'Zobrazenie FPS na obrazovke',
     'armor-hud': 'Výdrž brnenia na obrazovke',
-    'reimagined-intro': 'Animované intro pri spustení hry (na slabších PC vypnuté)'
+    'reimagined-intro': 'Animované intro pri spustení hry (na slabších PC vypnuté)',
+    patpat: 'Pohladkaj hráčov, miláčikov aj moby (Shift + pravé tlačidlo)'
   }
 };
 

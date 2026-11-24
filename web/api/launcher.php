@@ -51,6 +51,7 @@ $config = [
         ['id' => 'krypton', 'name' => 'Krypton', 'desc' => 'Optimalizace sítě', 'required' => true],
         ['id' => 'simple-voice-chat', 'name' => 'Simple Voice Chat', 'desc' => 'Hlasový chat na serveru', 'required' => true],
         ['id' => 'iris', 'name' => 'Iris Shaders', 'desc' => 'Podpora shaderů', 'required' => true],
+        ['id' => 'patpat', 'name' => 'PatPat', 'desc' => 'Pohlaď hráče, mazlíčky i mobky (Shift + pravé tlačítko)', 'required' => true],
         ['id' => 'modmenu', 'name' => 'Mod Menu', 'desc' => 'Seznam a nastavení modů', 'required' => true],
         ['id' => 'xaeros-minimap', 'name' => 'Xaero\'s Minimap', 'desc' => 'Minimapa', 'default' => true],
         ['id' => 'xaeros-world-map', 'name' => 'Xaero\'s World Map', 'desc' => 'Velká mapa světa (klávesa M)', 'default' => true],
