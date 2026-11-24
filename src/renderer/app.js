@@ -464,11 +464,23 @@ wyl.onUpdate((u) => {
 $('#updateBtn').addEventListener('click', () => wyl.installUpdate());
 
 /* ---------- Mody ---------- */
-function renderMods() {
+function modOn(m) {
   const opt = state.settings.optionalMods || {};
+  if (m.required) return true;
+  if (m.id in opt) return opt[m.id];
+  if (m.default === false) return false;
+  return !(m.weakPc === false && state.weakPc);
+}
+
+async function setModOn(id, on) {
+  const optionalMods = { ...(state.settings.optionalMods || {}), [id]: on };
+  state.settings = { ...state.settings, ...(await wyl.setSettings({ optionalMods })) };
+}
+
+function renderMods() {
   $('#modList').innerHTML = state.config.mods
     .map((m) => {
-      const on = m.required || (m.id in opt ? opt[m.id] : m.default !== false);
+      const on = modOn(m);
       const control = m.required
         ? '<span class="lock">povinný</span>'
         : `<label class="switch"><input type="checkbox" data-mod="${esc(m.id)}" ${on ? 'checked' : ''}><span></span></label>`;
@@ -477,8 +489,8 @@ function renderMods() {
     .join('');
   $$('#modList input[data-mod]').forEach((i) =>
     i.addEventListener('change', async () => {
-      const optionalMods = { ...(state.settings.optionalMods || {}), [i.dataset.mod]: i.checked };
-      state.settings = { ...state.settings, ...(await wyl.setSettings({ optionalMods })) };
+      await setModOn(i.dataset.mod, i.checked);
+      if (i.dataset.mod === 'reimagined-intro') $('#introOn').checked = $('#quickIntro').checked = i.checked;
       toast('Změna se projeví při dalším spuštění hry.');
     })
   );
@@ -558,6 +570,21 @@ function renderSettings() {
     setShader($('#quickShaders').checked ? state.settings.lastShaderPreset || 'auto' : 'off');
     toast($('#quickShaders').checked ? 'Shadery zapnuté.' : 'Shadery vypnuté.');
   };
+
+  const intro = (state.config.mods || []).find((m) => m.id === 'reimagined-intro');
+  $('#introSetting').hidden = !intro;
+  $('#quickIntroBox').hidden = !intro;
+  if (intro) {
+    $('#introOn').checked = $('#quickIntro').checked = modOn(intro);
+    const setIntro = async (on) => {
+      await setModOn('reimagined-intro', on);
+      $('#introOn').checked = $('#quickIntro').checked = on;
+      renderMods();
+      toast(on ? 'Intro zapnuté.' : 'Intro vypnuté. Hra se načte rychleji a spotřebuje méně paměti.');
+    };
+    $('#introOn').onchange = () => setIntro($('#introOn').checked);
+    $('#quickIntro').onchange = () => setIntro($('#quickIntro').checked);
+  }
 
   $('#autoJoin').checked = Boolean(s.autoJoin);
   $('#autoJoin').onchange = () => wyl.setSettings({ autoJoin: $('#autoJoin').checked });

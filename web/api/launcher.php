@@ -56,7 +56,7 @@ $config = [
         ['id' => 'dynamic-fps', 'name' => 'Dynamic FPS', 'desc' => 'Šetří výkon, když hra není v popředí', 'default' => true],
         ['id' => 'fpsdisplay', 'name' => 'FPS Display', 'desc' => 'Zobrazení FPS na obrazovce', 'default' => true],
         ['id' => 'armor-hud', 'name' => 'Armor HUD', 'desc' => 'Výdrž brnění na obrazovce', 'default' => true],
-        ['id' => 'reimagined-intro', 'name' => 'Reimagined Intro', 'desc' => 'Animované intro při spuštění hry', 'default' => true],
+        ['id' => 'reimagined-intro', 'name' => 'Reimagined Intro', 'desc' => 'Animované intro při spuštění hry (na slabších PC vypnuté)', 'default' => true, 'weakPc' => false],
     ],
     // Po schválení aplikace u Mojangu sem vlož Client ID z Azure (Application (client) ID).
     'microsoft' => [

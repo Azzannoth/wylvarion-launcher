@@ -69,6 +69,10 @@
             <div class="progress-text" id="progressText">Připraveno ke hře</div>
             <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
           </div>
+          <label class="quick" id="quickIntroBox" title="Animované intro při spuštění hry. Na slabších počítačích ho vypni, bere hodně paměti.">
+            <span>Intro</span>
+            <span class="switch"><input type="checkbox" id="quickIntro"><span></span></span>
+          </label>
           <label class="quick" title="Shadery jdou přepnout i ve hře klávesou K">
             <span>Shadery</span>
             <span class="switch"><input type="checkbox" id="quickShaders"><span></span></span>
@@ -168,6 +172,16 @@
               <option value="medium">Střední výkon</option>
               <option value="high">Výkonná grafika</option>
             </select>
+          </div>
+        </div>
+
+        <div class="setting" id="introSetting">
+          <div>
+            <div class="s-title">Animované intro při spuštění</div>
+            <div class="s-desc">Reimagined Intro. Při načítání si vezme dost paměti a na slabších počítačích může hru shodit. Na slabších počítačích je proto vypnuté samo.</div>
+          </div>
+          <div class="s-control">
+            <label class="switch"><input type="checkbox" id="introOn"><span></span></label>
           </div>
         </div>
 

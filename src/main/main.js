@@ -140,9 +140,20 @@ function loginWindow(url, redirectUri) {
   });
 }
 
+// Slabší počítač: integrovaná grafika nebo méně než 8 GB RAM.
+function weakPc() {
+  return mods.gpuTier(app._gpuInfo) === 'low' || os.totalmem() < 8 * 1024 * 1024 * 1024;
+}
+
+// Výchozí stav volitelného modu. weakPc: false = na slabém počítači vypnutý (např. intro, které tam padá).
+function modDefault(m) {
+  if (m.default === false) return false;
+  return !(m.weakPc === false && weakPc());
+}
+
 async function selectedModList() {
   const opt = settings.optionalMods || {};
-  return (config.mods || []).filter((m) => m.required || (m.id in opt ? opt[m.id] : m.default !== false));
+  return (config.mods || []).filter((m) => m.required || (m.id in opt ? opt[m.id] : modDefault(m)));
 }
 
 function shaderChoice() {
@@ -292,6 +303,7 @@ function setupIpc() {
     totalMemoryMb: Math.round(os.totalmem() / 1024 / 1024),
     recommendedMemoryMb: recommendedMemory(),
     gpuTier: mods.gpuTier(app._gpuInfo),
+    weakPc: weakPc(),
     config: {
       server: config.server,
       minecraft: config.minecraft,
