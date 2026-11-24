@@ -36,7 +36,7 @@ $config = [
     // Resource pack serveru – launcher ho stáhne předem, aby se při připojení nestahoval.
     // Musí to být stejná adresa jako v ItemsAdder/config.yml (pack_hosting.external_host.url).
     'resourcePack' => [
-        'url' => 'https://github.com/Azzannoth/ItemsAdderV2/releases/download/1.1/generated.zip',
+        'url' => 'https://raw.githubusercontent.com/Azzannoth/wylvarion-launcher/resourcepack/generated.zip',
     ],
     // Seznam modů (přepíše ten vestavěný v launcheru). 'version' připne konkrétní verzi z Modrinthu.
     // Sodium 0.9.3 nefunguje s Iris 1.11.7, proto Sodium 0.9.2 + kompatibilní Sodium Extra a Reese's.
