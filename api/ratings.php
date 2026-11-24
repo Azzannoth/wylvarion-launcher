@@ -27,7 +27,10 @@ function rt_members(): array {
     $team = require __DIR__ . '/../includes/data/team.php';
     $out = [];
     foreach ($team as $g) foreach ($g['members'] as $m) {
-        if (($m['nick'] ?? '') !== '' && $m['nick'] !== 'Volná pozice') $out[strtolower($m['nick'])] = $m['nick'];
+        if (($m['nick'] ?? '') !== '' && $m['nick'] !== 'Volná pozice') {
+            $out[strtolower($m['nick'])] = $m['nick'];
+            if (!empty($m['discord'])) $GLOBALS['RT_DISCORD'][strtolower($m['nick'])] = array_map('strval', (array)$m['discord']);
+        }
     }
     return $out;
 }
@@ -41,15 +44,47 @@ function rt_me(): ?array {
         'avatar' => $av !== '' ? "https://cdn.discordapp.com/avatars/{$dc['id']}/{$av}.png?size=64"
                                 : 'https://cdn.discordapp.com/embed/avatars/' . ((int)substr((string)$dc['id'], -3) % 6) . '.png',
         'member' => !empty($dc['member']),
+        'username' => (string)($dc['username'] ?? ''),
     ];
+}
+function rt_norm(string $s): string { return preg_replace('/[^a-z0-9]/', '', strtolower($s)); }
+// Je přihlášený člověk sám hodnocený člen? (Discord ID v team.php, propojení s webovým účtem, shodné jméno)
+function rt_is_self(?array $me, string $key, array $d): bool {
+    if (!$me) return false;
+    if (in_array($me['id'], $GLOBALS['RT_DISCORD'][$key] ?? [], true)) return true;
+    if (in_array($key, $d['links'][$me['id']] ?? [], true)) return true;
+    $u = current_user();
+    if ($u && strtolower($u['nick']) === $key) return true;
+    $n = rt_norm($key);
+    return $n !== '' && ($n === rt_norm($me['name']) || $n === rt_norm($me['username']));
+}
+// Review, kterou člen napsal sám sobě (podle propojení účtů / Discord ID) – nezobrazovat.
+function rt_self_review(array $r, string $key, array $d): bool {
+    if (in_array($r['uid'], $GLOBALS['RT_DISCORD'][$key] ?? [], true)) return true;
+    if (in_array($key, $d['links'][$r['uid']] ?? [], true)) return true;
+    return rt_norm($key) !== '' && rt_norm($key) === rt_norm($r['name']);
 }
 function rt_public(array $r): array {
     return ['id' => $r['id'], 'name' => $r['name'], 'avatar' => $r['avatar'], 'stars' => $r['stars'],
             'text' => $r['text'], 'time' => $r['time'], 'edited' => !empty($r['edited'])];
 }
 
+$GLOBALS['RT_DISCORD'] = [];
 $members = rt_members();
 $me = rt_me();
+// Zapamatovat, který Discord patří ke kterému hernímu nicku (když je člověk přihlášený obojím).
+$cu = current_user();
+if ($me && $cu) {
+    $d0 = rt_load();
+    $nk = strtolower($cu['nick']);
+    if (!in_array($nk, $d0['links'][$me['id']] ?? [], true)) {
+        $fp0 = fopen(RT_FILE . '.lock', 'c'); flock($fp0, LOCK_EX);
+        $d0 = rt_load();
+        $d0['links'][$me['id']] = array_values(array_unique(array_merge($d0['links'][$me['id']] ?? [], [$nk])));
+        rt_save($d0);
+        flock($fp0, LOCK_UN); fclose($fp0);
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $d = rt_load();
@@ -57,14 +92,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($key === '') {
         $sum = [];
         foreach ($members as $k => $nick) {
-            $list = $d['reviews'][$k] ?? [];
+            $list = array_filter($d['reviews'][$k] ?? [], fn($r) => !rt_self_review($r, $k, $d));
             $n = count($list);
             $sum[$nick] = ['avg' => $n ? round(array_sum(array_column($list, 'stars')) / $n, 1) : 0, 'count' => $n];
         }
         json_out(200, ['ok' => true, 'summary' => $sum]);
     }
     if (!isset($members[$key])) json_out(404, ['ok' => false, 'error' => 'Tento člen v teamu není.']);
-    $list = array_values($d['reviews'][$key] ?? []);
+    $list = array_values(array_filter($d['reviews'][$key] ?? [], fn($r) => !rt_self_review($r, $key, $d)));
     usort($list, fn($a, $b) => $b['time'] <=> $a['time']);
     $n = count($list);
     $mine = null;
@@ -74,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     json_out(200, [
         'ok' => true, 'member' => $members[$key],
         'avg' => $n ? round(array_sum(array_column($list, 'stars')) / $n, 1) : 0, 'count' => $n, 'dist' => $dist,
-        'reviews' => array_map('rt_public', $list), 'me' => $me, 'mine' => $mine, 'admin' => is_admin(),
+        'reviews' => array_map('rt_public', $list), 'me' => $me, 'mine' => $mine, 'admin' => is_admin(), 'self' => rt_is_self($me, $key, $d),
     ]);
 }
 
@@ -106,6 +141,7 @@ if ($action === 'delete') {
     json_out(200, ['ok' => true]);
 }
 
+if (rt_is_self($me, $key, $d)) json_out(403, ['ok' => false, 'error' => 'Sám sebe hodnotit nemůžeš.']);
 $hour = (int)floor(time() / 3600);
 $rk = $me['id'] . ':' . $hour;
 if (($d['rate'][$rk] ?? 0) >= 10) json_out(429, ['ok' => false, 'error' => 'Moc úprav za krátkou dobu, zkus to prosím za chvíli.']);

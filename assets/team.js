@@ -71,6 +71,7 @@ function rtFormHTML(d){
   const login = `${CONFIG.apiBase}/discord-login.php?ret=team`;
   if (!d.me) return `<div class="rt-gate"><b>Hodnotit mohou jen členové našeho Discordu</b><span>Přihlášení trvá pár vteřin a jméno se doplní samo.</span><a class="dc-btn" href="${login}" data-rt-login>Přihlásit přes Discord</a></div>`;
   if (!d.me.member) return `<div class="rt-gate"><b>Nejdřív se připoj na náš Discord</b><span>Hodnotit mohou jen členové Wylvarion Discordu.</span><a class="btn btn-ghost btn-sm" href="${CONFIG.discordInvite}" target="_blank" rel="noopener">Připojit se na Discord</a></div>`;
+  if (d.self) return `<div class="rt-gate"><b>Sám sebe hodnotit nemůžeš</b><span>Hodnocení je pro ostatní členy teamu.</span></div>`;
   const m = d.mine;
   return `<form class="rt-form" id="rtForm">
     <div class="rt-form-head"><img src="${escapeHtml(d.me.avatar)}" alt=""><div><b>${escapeHtml(d.me.name)}</b><span>${m ? 'Upravit tvoje hodnocení' : 'Tvoje hodnocení'}</span></div></div>
