@@ -61,6 +61,25 @@ function recommendedMemory() {
   return 2048;
 }
 
+// Nikdy nepřidělit hře víc paměti, než počítač unese (jinak se Java vůbec nespustí).
+function safeMemory(mb) {
+  const totalMb = Math.round(os.totalmem() / 1024 / 1024);
+  const cap = Math.max(1536, totalMb - (totalMb >= 8000 ? 2560 : 1536));
+  return Math.max(1024, Math.min(mb, cap));
+}
+
+// Rozpozná z konce logu, proč hra spadla.
+function diagnoseCrash(tail) {
+  const t = tail.join('\n');
+  if (/Could not reserve enough space|Invalid maximum heap|Initial heap size set to a larger value|Could not create the Java Virtual Machine/i.test(t)) return 'ram-start';
+  if (/OutOfMemoryError|Java heap space|GC overhead limit/i.test(t)) return 'memory';
+  if (/Incompatible mods? found|Mod resolution encountered|requires .* which is missing|Could not find required mod|Mixin apply .* failed|MixinApplyError/i.test(t)) return 'mods';
+  if (/reimagined[-_ ]?intro|reimaginedintro/i.test(t) && /Exception|Error/.test(t)) return 'intro';
+  if (/iris|shaderpack|oculus/i.test(t) && /Exception|Error/.test(t)) return 'shaders';
+  if (/GLFW error|Pixel format not accelerated|OpenGL|WGL|EXCEPTION_ACCESS_VIOLATION|nvoglv|atio6axx|ig\d+icd|igxelpicd|A fatal error has been detected by the Java Runtime/i.test(t)) return 'graphics';
+  return 'unknown';
+}
+
 async function loadConfig() {
   const local = JSON.parse(fs.readFileSync(LOCAL_CONFIG, 'utf8'));
   config = local;
@@ -255,6 +274,8 @@ function shaderChoice() {
   return s ? s.id : null;
 }
 
+let lastCrashTail = [];
+
 async function play() {
   if (busy) return;
   if (gameProcess) throw new Error('Hra už běží.');
@@ -356,7 +377,7 @@ async function play() {
       dirs: d,
       account: { ...acc, clientId: config.microsoft.clientId },
       server: config.server,
-      memoryMb: settings.memoryMb || recommendedMemory(),
+      memoryMb: safeMemory(settings.memoryMb || recommendedMemory()),
       launcherVersion: app.getVersion(),
       quickPlay: Boolean(settings.autoJoin),
       width: settings.width,
@@ -369,17 +390,38 @@ async function play() {
     log.write(`[Wylvarion Launcher ${app.getVersion()}] ${new Date().toISOString()}\n${javaPath} ${redact(cmd.args, acc.accessToken).join(' ')}\n\n`);
 
     progress({ stage: 'launch', text: 'Spouštím Minecraft…', done: 1, total: 1 });
+    const tail = [];
     gameProcess = launch(javaPath, cmd, d, (line) => {
       log.write(line);
       send('game-log', line);
+      for (const l of String(line).split('\n')) {
+        if (!l) continue;
+        tail.push(l);
+        if (tail.length > 400) tail.shift();
+        if (gameProcess && /Reloading ResourceManager|Sound engine started|OpenAL initialized|Created: \d+x\d+/.test(l)) gameProcess.emit('game-window');
+      }
     });
     const started = Date.now();
+    // Launcher se schová/zavře až ve chvíli, kdy je okno hry opravdu vidět (ne hned po startu Javy),
+    // ať hráč nezůstane bez ničeho, když se hra načítá dlouho nebo spadne.
+    let windowUp = false;
+    let afterTimer = null;
+    const afterLaunch = () => {
+      if (!gameProcess || afterTimer === 'done') return;
+      clearTimeout(afterTimer);
+      afterTimer = 'done';
+      if (settings.afterLaunch === 'hide' && win && !win.isDestroyed()) win.hide();
+      if (settings.afterLaunch === 'close') app.quit();
+    };
+    gameProcess.on('game-window', () => {
+      windowUp = true;
+      progress({ stage: 'idle' });
+      setTimeout(afterLaunch, 1500);
+    });
     gameProcess.on('spawn', () => {
       send('game-state', { running: true });
-      setTimeout(() => {
-        if (gameProcess && settings.afterLaunch === 'hide' && win && !win.isDestroyed()) win.hide();
-        if (gameProcess && settings.afterLaunch === 'close') app.quit();
-      }, 4000);
+      progress({ stage: 'starting', text: 'Minecraft se načítá…', done: 0, total: 0 });
+      afterTimer = setTimeout(afterLaunch, 180000);
     });
     gameProcess.on('error', (e) => {
       send('notice', `Hru se nepodařilo spustit: ${e.message}`);
@@ -387,7 +429,12 @@ async function play() {
     gameProcess.on('exit', (code) => {
       log.end();
       gameProcess = null;
-      send('game-state', { running: false, code, playedMs: Date.now() - started, logFile });
+      if (afterTimer !== 'done') clearTimeout(afterTimer);
+      const playedMs = Date.now() - started;
+      const crashed = code !== 0 && code !== null;
+      lastCrashTail = tail.slice(-300);
+      const crash = crashed ? { kind: diagnoseCrash(tail), early: !windowUp || playedMs < 120000, code } : null;
+      send('game-state', { running: false, code, playedMs, logFile, crash });
       if (win && !win.isDestroyed()) {
         win.show();
         win.focus();
@@ -634,6 +681,19 @@ function setupIpc() {
   });
 
   ipcMain.handle('copy', (e, text) => clipboard.writeText(String(text || '').slice(0, 200)));
+  ipcMain.handle('copyLog', () => {
+    clipboard.writeText(`Wylvarion Launcher ${app.getVersion()} | ${os.platform()} ${os.release()} | RAM ${Math.round(os.totalmem() / 1073741824)} GB\n` + lastCrashTail.join('\n'));
+    return true;
+  });
+  // Rychlé opravy po pádu hry.
+  ipcMain.handle('crashFix', (e, what) => {
+    if (what === 'intro') settings.optionalMods = { ...(settings.optionalMods || {}), 'reimagined-intro': false };
+    if (what === 'shaders') settings.shaderPreset = 'off';
+    if (what === 'ram') settings.memoryMb = safeMemory(Math.max(2048, (settings.memoryMb || recommendedMemory()) - 1024));
+    if (what === 'more-ram') settings.memoryMb = safeMemory((settings.memoryMb || recommendedMemory()) + 1024);
+    store.saveSettings(settings);
+    return { ...settings };
+  });
 
   // Oprava: při dalším spuštění znovu stáhnout a ověřit resource pack, intro a shader.
   // Mody launcher ověřuje podle SHA-1 při každém spuštění, poškozené stáhne znovu sám.
@@ -685,7 +745,6 @@ function setupUpdater() {
   autoUpdater.on('error', () => {});
   autoUpdater.checkForUpdates().catch(() => {});
   // Kontrola i za běhu (každou hodinu), ne jen při startu.
-  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 60 * 60 * 1000);
   setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 60 * 60 * 1000);
 }
 

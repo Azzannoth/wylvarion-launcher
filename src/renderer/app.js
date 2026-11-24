@@ -471,7 +471,7 @@ function setProgress(p) {
   const base = STAGES[p.stage] ?? 0;
   const keys = Object.keys(STAGES);
   const next = STAGES[keys[keys.indexOf(p.stage) + 1]] ?? 1;
-  fill.classList.toggle('indeterminate', p.stage === 'login');
+  fill.classList.toggle('indeterminate', p.stage === 'login' || p.stage === 'starting');
   fill.style.width = `${Math.round((base + (next - base) * part) * 100)}%`;
   // text podle fáze v jazyce launcheru (z hlavního procesu chodí česky)
   const label = I18N.cs['stage.' + p.stage] ? t('stage.' + p.stage) : p.text;
@@ -507,9 +507,39 @@ wyl.onGameState((g) => {
   $('#playBtn').disabled = g.running;
   $('#playBtn span').textContent = g.running ? t('play.running') : t('play.play');
   setProgress({ stage: 'idle' });
-  if (!g.running && g.code && g.code !== 0) {
-    toast(t('toast.crash'), true);
+  if (!g.running && g.crash) showCrash(g.crash);
+  else if (!g.running && g.code && g.code !== 0) toast(t('toast.crash'), true);
+});
+
+// Hra spadla: vysvětlit proč a nabídnout opravu jedním kliknutím.
+const CRASH_FIX = { 'ram-start': 'ram', memory: 'intro', intro: 'intro', shaders: 'shaders', graphics: 'shaders', mods: 'repair', unknown: 'repair' };
+function showCrash(c) {
+  const kind = I18N.cs['crash.' + c.kind] ? c.kind : 'unknown';
+  $('#crashText').textContent = t('crash.' + kind);
+  const fix = CRASH_FIX[kind];
+  const btn = $('#crashFix');
+  btn.hidden = !fix;
+  btn.textContent = t('crash.fix.' + fix);
+  btn.dataset.fix = fix;
+  $('#crashCode').textContent = c.code != null ? t('crash.code', { code: c.code }) : '';
+  $('#crashOverlay').hidden = false;
+}
+$('#crashClose').addEventListener('click', () => { $('#crashOverlay').hidden = true; });
+$('#crashCopy').addEventListener('click', async () => {
+  await wyl.copyLog();
+  toast(t('crash.copied'));
+});
+$('#crashLogs').addEventListener('click', () => wyl.open('logs'));
+$('#crashFix').addEventListener('click', async () => {
+  const fix = $('#crashFix').dataset.fix;
+  if (fix === 'repair') await wyl.repair();
+  else {
+    const st = await wyl.crashFix(fix);
+    if (st && state.settings) Object.assign(state.settings, st);
   }
+  $('#crashOverlay').hidden = true;
+  toast(t('crash.fixed'));
+  renderAll();
 });
 let lastUpdate = null;
 function renderUpdate() {

@@ -35,6 +35,8 @@ contextBridge.exposeInMainWorld('wyl', {
   external: (url) => ipcRenderer.invoke('external', url),
   copy: (text) => ipcRenderer.invoke('copy', text),
   repair: () => ipcRenderer.invoke('repair'),
+  copyLog: () => ipcRenderer.invoke('copyLog'),
+  crashFix: (what) => ipcRenderer.invoke('crashFix', what),
   windowAction: (a) => ipcRenderer.invoke('window', a),
   installUpdate: () => ipcRenderer.invoke('update:install'),
   onProgress: on('progress'),
