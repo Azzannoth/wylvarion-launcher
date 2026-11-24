@@ -1,0 +1,16 @@
+{
+  "id": "wylvarion_cinematic_v4_fhd",
+  "version": "6.3.0",
+  "file": "wylvarion-intro.zip",
+  "size": 184262295,
+  "sha1": "8cd63dc2d1d67cbd96d482762e053bf82530f660",
+  "parts": [
+    "part_00",
+    "part_01"
+  ],
+  "menu": {
+    "file": "wylvarion-menu.zip",
+    "size": 3976371,
+    "sha1": "836c5d38048d5225f97e4ba438f5413240b9b920"
+  }
+}
