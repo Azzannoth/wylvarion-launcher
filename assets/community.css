@@ -262,3 +262,5 @@
 .in-steps li span{color:var(--parchment-dim);font-size:14px;line-height:1.5;}
 @media (max-width:900px){ .in-common{grid-template-columns:1fr;} .in-steps ol{grid-template-columns:1fr 1fr;} }
 @media (max-width:560px){ .in-steps ol{grid-template-columns:1fr;} .in-god{flex-direction:column;text-align:center;} }
+.in-god-ic img,.in-god-ic .mci{width:58px !important;height:58px !important;}
+.in-card ul:not(.in-perks) li::marker,.in-box ul:not(.in-perks) li::marker{content:"•  ";color:var(--violet);font-weight:800;}
