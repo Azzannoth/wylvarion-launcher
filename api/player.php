@@ -39,6 +39,8 @@ try {
             $out['last_seen'] = $h['last'] ? strtotime($h['last']) * 1000 : null;
         }
 
+        $hidden = array_map('strtolower', require __DIR__ . '/_hidden_players.php');
+        $hide = (bool)array_intersect($hidden, array_map('strtolower', $names ?? []));
         $list = [];
         $defs = ['BAN' => 'bans', 'MUTE' => 'mutes', 'KICK' => 'kicks', 'WARN' => 'warnings'];
         foreach ($defs as $type => $tbl) {
@@ -46,7 +48,7 @@ try {
             $st = $pdo->prepare("SELECT t.reason, t.banned_by_name, t.time, t.active, $extra FROM {$p}{$tbl} t
                                  WHERE t.uuid = ? AND LOWER(TRIM(t.reason)) <> 'test' ORDER BY t.time DESC LIMIT 50");
             $st->execute([$uuid]);
-            foreach ($st->fetchAll() as $r) {
+            foreach ($hide ? [] : $st->fetchAll() as $r) {
                 $until = (int)$r['until'];
                 if ($type === 'KICK') { $s = ['Jednorázový', 'kick']; }
                 elseif (!empty($r['removed_by_name']) && (int)$r['active'] === 0) { $s = ['Zrušen', 'removed']; }

@@ -26,8 +26,13 @@ function wyl_status(array $r, string $type): array {
 
 try {
     $pdo = get_db();
+    $hidden = require __DIR__ . '/_hidden_players.php';
     $where = "LOWER(TRIM(t.reason)) <> 'test'";
     $args = [];
+    if ($hidden) {
+        $where .= " AND t.uuid NOT IN (SELECT h2.uuid FROM {$p}history h2 WHERE h2.name IN (" . implode(',', array_fill(0, count($hidden), '?')) . "))";
+        $args = array_merge($args, $hidden);
+    }
     if ($q !== '') {
         if (preg_match('/^[0-9a-f\-]{32,36}$/i', $q)) {
             $where .= " AND REPLACE(t.uuid,'-','') = ?";
