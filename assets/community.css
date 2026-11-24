@@ -271,3 +271,11 @@
 #spolupraceForm select{width:100%;height:45.7px;background:#0a0714;border:1px solid rgba(91,200,255,.16);border-radius:8px;padding:0 13px;font:inherit;font-size:14px;color:#fff;outline:0;}
 #spolupraceForm select:focus{border-color:rgba(192,132,252,.6);}
 #spolupraceForm select option{background:#170f26;color:#fff;}
+
+.in-rgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
+.in-rule{display:flex;gap:14px;align-items:flex-start;padding:18px;border-radius:16px;background:var(--stone);border:1px solid rgba(193,67,46,.28);}
+.in-rule>span{font-size:26px;flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:rgba(193,67,46,.12);}
+.in-rule>span .ic,.in-rule>span img{width:28px !important;height:28px !important;image-rendering:pixelated;}
+.in-rule b{color:#fff;font-weight:800;}
+.in-rule p{margin:4px 0 0;color:var(--parchment-dim);font-size:14px;line-height:1.55;}
+@media (max-width:800px){ .in-rgrid{grid-template-columns:1fr;} }

@@ -412,12 +412,14 @@
         <div class="in-card" style="--c:${t.color}"><div class="in-ic">${t.icon}</div><h3>${esc(t.name)}</h3>
           <h4>Podmínky navíc</h4><ul>${li(t.req)}</ul>
           <h4>Co získáš</h4><ul class="in-perks">${t.perks.map((r) => `<li${/GOD VIP/i.test(r) ? ' class="in-vip"' : ''}>${esc(r)}</li>`).join('')}</ul></div>`).join('')}</div>
+      ${I.rules ? `<div class="in-rules"><h3 class="sl-title">Pravidla pro tvůrce</h3><p class="cm-note">Rank tvůrce je odměna, ne nárok. Kdo pravidla nedodržuje, o rank i GOD VIP přijde.</p>
+        <div class="in-rgrid">${I.rules.map((r) => `<div class="in-rule"><span>${r.icon}</span><div><b>${esc(r.title)}</b><p>${esc(r.text)}</p></div></div>`).join('')}</div></div>` : ''}
       <div class="in-steps"><h3 class="sl-title">Jak to probíhá</h3><ol>
         <li><b>Natoč obsah</b><span>Reels, klipy, shorts, videa nebo streamy z Wylvarionu.</span></li>
         <li><b>Pošli žádost</b><span>V Žádostech → Spolupráce vyplň odkazy na svůj kanál a obsah. Stačí být na našem Discordu.</span></li>
         <li><b>Schválení</b><span>Admin team projde tvůj obsah a ozve se ti obvykle do pár dní.</span></li>
         <li><b>Rank a GOD VIP</b><span>Dostaneš rank tvůrce a GOD VIP natrvalo, dokud rank máš.</span></li></ol>
-        <p class="cm-note">Když přestaneš tvořit obsah ze serveru (víc než měsíc nic) nebo porušíš pravidla, rank i GOD VIP se odebírají.</p></div>
+        <p class="cm-note">Odesláním žádosti souhlasíš s pravidly pro tvůrce výše.</p></div>
       <h3 class="sl-title">Naši tvůrci</h3>
       ${I.creators.length ? `<div class="in-creators">${I.creators.map((c) => { const t = I.tiers.find((x) => x.id === c.type) || {}; return `
         <a class="in-creator" href="${esc(c.url || '#')}" target="_blank" rel="noopener" style="--c:${t.color || '#a855f7'}"><img src="https://mc-heads.net/body/${encodeURIComponent(c.nick)}/140" alt="" loading="lazy"><b>${esc(c.nick)}</b><span>${esc(t.name || 'Tvůrce')}</span></a>`; }).join('')}</div>`

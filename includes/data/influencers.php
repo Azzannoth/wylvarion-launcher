@@ -18,6 +18,16 @@ return [
         'Přístup k novinkám a eventům dřív než ostatní',
         'Přímý kontakt s admin teamem a podpora pro tvůj obsah',
     ],
+    'rules' => [
+        ['icon' => '⏳', 'title' => 'Neaktivita = konec ranku', 'text' => 'Když víc než 30 dní nevydáš žádný stream, video, reel ani klip ze serveru, rank tvůrce i GOD VIP se odebírá. Pauzu (dovolená, škola, nemoc) nahlas předem adminům a domluvíme se.'],
+        ['icon' => '🤬', 'title' => 'Chování na streamu i ve videích', 'text' => 'Reprezentuješ Wylvarion. Urážení hráčů nebo admin teamu, nadávání na server, toxicita, rasismus a podobné věci = okamžité odebrání ranku.'],
+        ['icon' => '🚫', 'title' => 'Žádná reklama na jiné servery', 'text' => 'Ve streamu, videu ani v popisu nepropaguj jiné Minecraft servery, pokud to s námi nemáš domluvené.'],
+        ['icon' => '🐛', 'title' => 'Bugy a exploity hlásíš, ne ukazuješ', 'text' => 'Najdeš chybu? Nahlas ji adminům. Ukazovat nebo zneužívat bugy, dupy a exploity ve videu je zakázané a vede ke ztrátě ranku i trestu na serveru.'],
+        ['icon' => '🤫', 'title' => 'Novinky jen po dohodě', 'text' => 'Věci, které vidíš dřív než ostatní (nové updaty, eventy), nezveřejňuj, dokud ti to admin team nepovolí.'],
+        ['icon' => '📈', 'title' => 'Žádné falešné sledující', 'text' => 'Kupované sledující, boti nebo podvodné statistiky = rank neschválíme, případně ho odebereme.'],
+        ['icon' => '💎', 'title' => 'GOD VIP není na prodej', 'text' => 'Výhody z ranku nesmíš prodávat, půjčovat ani zneužívat proti ostatním hráčům. Pravidla serveru platí pro tvůrce stejně jako pro všechny.'],
+        ['icon' => '⚖️', 'title' => 'Jak to řešíme', 'text' => 'U drobností nejdřív upozornění, při opakování nebo vážném porušení rank i GOD VIP odebíráme hned. O všem rozhoduje admin team.'],
+    ],
     'tiers' => [
         ['id' => 'youtuber', 'name' => 'YouTuber', 'icon' => '🎬', 'color' => '#ef4444',
          'req' => ['Aspoň 300 odběratelů na YouTube', 'Aspoň 1 delší video ze serveru měsíčně', 'K tomu aspoň 4 shorts nebo klipy ze serveru měsíčně'],
