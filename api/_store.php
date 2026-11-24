@@ -60,3 +60,27 @@ function wyl_rate_limit(string $bucket, int $max, int $seconds): bool {
         return $d[$key] <= $max;
     });
 }
+
+/* Discord role, které smí komentovat a reagovat: Člen (DISCORD_REQUIRED_ROLE_ID) a vyšší. */
+const WYL_DC_EXTRA_ROLES = [
+    '1556392821039308811', // OWNER
+    '1352710333328003092', // ADMIN
+    '1556404131579826216', // TECHNIK
+    '1556404242955374624', // MODERÁTOR
+    '1556404456185397299', // HELPER
+    '1546257952602857614', // BUILDER
+    '1546256989087207424', // EVENTER
+    '1352710110308208703', // Admin Team
+    '1536751553602658475', // Streamer
+];
+/** Přihlášený přes Discord: identita + jestli má roli Člen nebo vyšší. */
+function wyl_dc_identity(): ?array {
+    auth_start();
+    $dc = $_SESSION['discord'] ?? null;
+    if (!$dc || empty($dc['id'])) return null;
+    $av = (string)($dc['avatar'] ?? '');
+    $allowed = !empty($dc['member']) || (bool)array_intersect(WYL_DC_EXTRA_ROLES, $dc['roles'] ?? []);
+    return ['key' => 'dc:' . $dc['id'], 'name' => (string)($dc['name'] ?: $dc['username']),
+            'avatar' => $av !== '' ? "https://cdn.discordapp.com/avatars/{$dc['id']}/{$av}.png?size=64" : 'https://cdn.discordapp.com/embed/avatars/0.png',
+            'allowed' => $allowed, 'reason' => $allowed ? '' : ((string)($dc['reason'] ?? '') ?: 'no_role')];
+}

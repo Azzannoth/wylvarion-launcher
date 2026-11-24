@@ -48,7 +48,10 @@ function post_public(array $p, ?array $me, bool $full): array {
     return $out;
 }
 
-$me = wyl_identity();
+// Komentovat a reagovat smí jen hráči s rolí Člen (a vyšší) na Discordu.
+$dcId = wyl_dc_identity();
+$me = ($dcId && $dcId['allowed']) ? $dcId : null;
+$gate = $me ? null : ($dcId ? ($dcId['reason'] === 'not_member' ? 'not_member' : 'no_role') : 'login');
 $staff = is_event_staff();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -59,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if (!$p) wyl_json(404, ['ok' => false, 'error' => 'Článek neexistuje.']);
         $list = array_values($d['posts']); usort($list, fn($a, $b) => $b['time'] <=> $a['time']);
         $idx = array_search($id, array_column($list, 'id'), true);
-        wyl_json(200, ['ok' => true, 'post' => post_public($p, $me, true), 'me' => $me ? ['name' => $me['name'], 'avatar' => $me['avatar']] : null,
+        wyl_json(200, ['ok' => true, 'post' => post_public($p, $me, true), 'me' => $me ? ['name' => $me['name'], 'avatar' => $me['avatar']] : null, 'gate' => $gate,
             'staff' => $staff, 'admin' => is_admin(),
             'newer' => $idx > 0 ? ['id' => $list[$idx - 1]['id'], 'title' => $list[$idx - 1]['title']] : null,
             'older' => isset($list[$idx + 1]) ? ['id' => $list[$idx + 1]['id'], 'title' => $list[$idx + 1]['title']] : null]);
@@ -105,7 +108,7 @@ if ($action === 'delete') {
     wyl_json(200, ['ok' => true]);
 }
 
-if (!$me) wyl_json(401, ['ok' => false, 'error' => 'Nejdřív se přihlas (Minecraft účtem nebo přes Discord).']);
+if (!$me) wyl_json(403, ['ok' => false, 'error' => $gate === 'login' ? 'Nejdřív se přihlas přes Discord.' : 'Komentovat a reagovat mohou jen hráči s rolí Člen na našem Discordu.']);
 
 if ($action === 'react') {
     $emoji = (string)($in['emoji'] ?? '');

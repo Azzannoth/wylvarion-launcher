@@ -289,7 +289,9 @@
           ${d.me ? `<form class="rt-form nw-cform" id="nwCForm"><div class="rt-form-head"><img src="${esc(d.me.avatar)}" alt=""><div><b>${esc(d.me.name)}</b><span>Napiš komentář</span></div></div>
             <textarea name="text" maxlength="600" rows="3" placeholder="Co na to říkáš?"></textarea>
             <div class="rt-form-foot"><span class="rt-msg" id="nwMsg"></span><button type="submit" class="wb-btn">Odeslat</button></div></form>`
-            : `<div class="rt-gate"><b>Chceš komentovat nebo reagovat?</b><span>Přihlas se Minecraft účtem nebo přes Discord.</span><div class="nw-logins"><button type="button" class="wb-btn" data-open-mclogin>Přihlásit Minecraft účtem</button><a class="dc-btn" href="${login}">Přihlásit přes Discord</a></div></div>`}
+            : d.gate === 'login'
+              ? `<div class="rt-gate"><b>Chceš komentovat nebo reagovat?</b><span>Komentovat a reagovat mohou hráči s rolí Člen a vyšší na našem Discordu.</span><a class="dc-btn" href="${login}">Přihlásit přes Discord</a></div>`
+              : `<div class="rt-gate"><b>${d.gate === 'not_member' ? 'Nejsi na našem Discordu' : 'Chybí ti role Člen'}</b><span>Komentovat a reagovat mohou jen hráči s rolí Člen a vyšší na našem Discordu. Získáš ji ověřením na serveru, pak se přihlas znovu.</span><div class="nw-logins"><a class="btn btn-ghost btn-sm" href="https://discord.gg/Q7PUz7ARsS" target="_blank" rel="noopener">Připojit se na Discord</a><a class="dc-btn" href="${login}">Přihlásit znovu</a></div></div>`}
           <div class="rt-list">${p.comments.slice().reverse().map((c) => `
             <div class="rt-item"><img src="${esc(c.avatar)}" alt="" loading="lazy"><div class="rt-item-main">
               <div class="rt-item-top"><b>${esc(c.name)}</b><small>${ago(c.time)}</small></div><p>${esc(c.text).replace(/\n/g, '<br>')}</p></div>
@@ -297,7 +299,7 @@
         </section>`;
       hydrate(box);
       box.querySelectorAll('[data-react]').forEach((b) => b.addEventListener('click', async () => {
-        if (!d.me) { openMcLogin(); return; }
+        if (!d.me) { box.querySelector('.nw-comments')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         const r = await postJSON(`${API}/posts.php`, { action: 'react', id: p.id, emoji: b.dataset.react });
         if (r.ok) nwOpen(p.id);
       }));
