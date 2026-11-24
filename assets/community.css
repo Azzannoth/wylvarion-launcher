@@ -178,7 +178,7 @@
 .in-creator span{color:var(--c);font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.08em;}
 
 /* admin team */
-.tj-banner{position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:180px;margin-bottom:34px;padding:28px 34px;border-radius:22px;overflow:hidden;
+.tj-banner{position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:180px;width:min(var(--maxw),calc(100% - 48px));margin:0 auto 34px;box-sizing:border-box;padding:28px 34px;border-radius:22px;overflow:hidden;
   background:radial-gradient(ellipse 600px 260px at 0% 0%,rgba(168,85,247,.35),transparent 70%),linear-gradient(120deg,var(--stone-2),var(--stone));border:1px solid rgba(192,132,252,.35);}
 .tj-text{display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-width:560px;position:relative;z-index:1;}
 .tj-text b{font:400 34px/1 var(--font-display);color:#fff;}
