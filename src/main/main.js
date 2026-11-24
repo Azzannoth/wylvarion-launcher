@@ -110,40 +110,116 @@ async function validAccount() {
   }
 }
 
+const LOGIN_BG = '#120b20';
+function loginPage(title, body, buttons) {
+  const btn = buttons.map(([href, label, primary]) => `<a href="${href}" class="${primary ? 'p' : ''}">${label}</a>`).join('');
+  const html = `<!doctype html><meta charset="utf-8"><style>
+    body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:${LOGIN_BG};color:#fff;font:15px Segoe UI,system-ui,sans-serif;text-align:center}
+    .w{max-width:380px;padding:24px}h1{font-size:20px;margin:0 0 10px}p{color:#b3a7c4;line-height:1.5;margin:0 0 18px}
+    .code{font:700 34px Consolas,monospace;letter-spacing:4px;padding:14px 18px;margin:0 0 18px;border-radius:12px;background:#221733;border:1px solid #6d28d9;user-select:all}
+    a{display:block;margin:8px 0;padding:12px;border-radius:10px;border:1px solid #3b2a55;color:#fff;text-decoration:none;font-weight:600}
+    a.p{background:linear-gradient(135deg,#c084fc,#7c3aed);border:0}
+    .sp{width:34px;height:34px;margin:0 auto 18px;border:3px solid #3b2a55;border-top-color:#c084fc;border-radius:50%;animation:r 1s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
+  </style><div class="w">${title}${body}${btn}</div>`;
+  return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+}
+
+// Okno přihlášení Microsoft. Když se stránka nenačte (blokace, výpadek, bílé okno),
+// nabídne „Zkusit znovu“ nebo přihlášení kódem v prohlížeči (microsoft.com/link).
 function loginWindow(url, redirectUri) {
   return new Promise((resolve, reject) => {
     const w = new BrowserWindow({
       width: 520,
       height: 720,
       parent: win,
-      modal: true,
       title: 'Přihlášení Microsoft',
       autoHideMenuBar: true,
-      webPreferences: { partition: `login-${Date.now()}` }
+      backgroundColor: LOGIN_BG,
+      webPreferences: { partition: `login-${Date.now()}`, sandbox: true, contextIsolation: true }
     });
+    const wc = w.webContents;
+    // Standardní Chrome user agent: Microsoft u neznámých prohlížečů občas vrátí prázdnou stránku.
+    wc.setUserAgent(wc.getUserAgent().replace(/\s(?:Electron|wylvarion[\w-]*|WylvarionLauncher)\/\S+/gi, ''));
     let finished = false;
-    const check = (target) => {
-      if (!target || !target.startsWith(redirectUri)) return false;
+    let loaded = false;
+    let watchdog = null;
+    const done = (fn) => {
       finished = true;
+      clearTimeout(watchdog);
+      if (!w.isDestroyed()) w.close();
+      fn();
+    };
+    const failPage = (why) => {
+      if (finished || w.isDestroyed()) return;
+      clearTimeout(watchdog);
+      wc.loadURL(loginPage('<h1>Přihlašovací stránka se nenačetla</h1>',
+        `<p>${why} Zkus to znovu, nebo se přihlas kódem ve svém prohlížeči – funguje to vždy.</p>`,
+        [['wyl://retry', 'Zkusit znovu', false], ['wyl://device', 'Přihlásit kódem v prohlížeči', true]]));
+    };
+    const start = () => {
+      loaded = false;
+      wc.loadURL(url);
+      clearTimeout(watchdog);
+      watchdog = setTimeout(() => { if (!loaded) failPage('Microsoft neodpovídá.'); }, 25000);
+    };
+    const check = (target) => {
+      if (!target) return false;
+      if (target.startsWith('wyl://')) {
+        if (target.startsWith('wyl://retry')) start();
+        else done(() => reject(Object.assign(new Error('device'), { code: 'DEVICE' })));
+        return true;
+      }
+      if (!target.startsWith(redirectUri)) return false;
       const u = new URL(target);
       const code = u.searchParams.get('code');
       const err = u.searchParams.get('error_description') || u.searchParams.get('error');
-      w.close();
-      code ? resolve({ code, state: u.searchParams.get('state') }) : reject(new Error(err || 'Přihlášení bylo zrušeno.'));
+      done(() => (code ? resolve({ code, state: u.searchParams.get('state') }) : reject(new Error(err || 'Přihlášení bylo zrušeno.'))));
       return true;
     };
-    w.webContents.on('will-redirect', (e, target) => {
-      if (check(target)) e.preventDefault();
+    wc.on('will-redirect', (e, target) => { if (check(target)) e.preventDefault(); });
+    wc.on('will-navigate', (e, target) => { if (check(target)) e.preventDefault(); });
+    wc.on('did-navigate', (e, target) => check(target));
+    wc.on('did-finish-load', () => { loaded = true; clearTimeout(watchdog); });
+    wc.on('did-fail-load', (e, errorCode, desc, target, isMain) => {
+      if (!isMain || errorCode === -3 || finished) return;
+      if (target && (target.startsWith(redirectUri) || target.startsWith('wyl://'))) return;
+      failPage(`Chyba připojení (${desc || errorCode}).`);
     });
-    w.webContents.on('will-navigate', (e, target) => {
-      if (check(target)) e.preventDefault();
+    wc.on('render-process-gone', () => failPage('Okno přihlášení spadlo.'));
+    wc.setWindowOpenHandler(({ url: u }) => {
+      if (/^https:\/\//.test(u)) shell.openExternal(u);
+      return { action: 'deny' };
     });
-    w.webContents.on('did-navigate', (e, target) => check(target));
     w.on('closed', () => {
+      clearTimeout(watchdog);
       if (!finished) reject(new Error('Přihlášení bylo zrušeno.'));
     });
-    w.loadURL(url);
+    start();
   });
+}
+
+// Přihlášení kódem: zobrazí kód, otevře microsoft.com/link v prohlížeči a čeká na potvrzení.
+async function deviceLogin(clientId) {
+  const dc = await auth.deviceCode(clientId);
+  const link = dc.verification_uri || 'https://www.microsoft.com/link';
+  const w = new BrowserWindow({ width: 460, height: 520, parent: win, title: 'Přihlášení kódem', autoHideMenuBar: true, backgroundColor: LOGIN_BG });
+  let closed = false;
+  w.on('closed', () => { closed = true; });
+  w.webContents.on('will-navigate', (e, target) => {
+    e.preventDefault();
+    if (target.startsWith('wyl://open')) shell.openExternal(link);
+    if (target.startsWith('wyl://copy')) clipboard.writeText(dc.user_code);
+  });
+  w.loadURL(loginPage('<div class="sp"></div><h1>Přihlášení kódem</h1>',
+    `<p>V prohlížeči otevři <b>${link.replace(/^https:\/\//, '')}</b>, zadej tento kód a přihlas se svým Microsoft účtem. Okno se pak samo zavře.</p><div class="code">${dc.user_code}</div>`,
+    [['wyl://open', 'Otevřít stránku v prohlížeči', true], ['wyl://copy', 'Zkopírovat kód', false]]));
+  clipboard.writeText(dc.user_code);
+  shell.openExternal(link);
+  try {
+    return await auth.pollDevice(clientId, dc, () => closed);
+  } finally {
+    if (!closed) w.close();
+  }
 }
 
 // Slabší počítač: integrovaná grafika nebo méně než 8 GB RAM.
@@ -378,10 +454,17 @@ function setupIpc() {
     const { verifier, challenge } = auth.pkce();
     const state = crypto.randomBytes(12).toString('hex');
     const url = auth.authorizeUrl(config.microsoft.clientId, config.microsoft.redirectUri, challenge, state);
-    const res = await loginWindow(url, config.microsoft.redirectUri);
-    if (res.state !== state) throw new Error('Neplatná odpověď přihlášení.');
-    progress({ stage: 'login', text: 'Ověřuji účet…', done: 0, total: 1 });
-    const ms = await auth.exchangeCode(config.microsoft.clientId, config.microsoft.redirectUri, res.code, verifier);
+    let ms;
+    try {
+      const res = await loginWindow(url, config.microsoft.redirectUri);
+      if (res.state !== state) throw new Error('Neplatná odpověď přihlášení.');
+      progress({ stage: 'login', text: 'Ověřuji účet…', done: 0, total: 1 });
+      ms = await auth.exchangeCode(config.microsoft.clientId, config.microsoft.redirectUri, res.code, verifier);
+    } catch (e) {
+      if (e.code !== 'DEVICE') throw e;
+      ms = await deviceLogin(config.microsoft.clientId);
+      progress({ stage: 'login', text: 'Ověřuji účet…', done: 0, total: 1 });
+    }
     const acc = await auth.fromMicrosoft(ms);
     store.saveAccount(acc);
     progress({ stage: 'idle', text: '', done: 1, total: 1 });

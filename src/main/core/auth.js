@@ -125,4 +125,36 @@ async function fromMicrosoft(ms) {
   return { ...mc, refreshToken: ms.refresh_token };
 }
 
-module.exports = { pkce, authorizeUrl, exchangeCode, refresh, fromMicrosoft, SCOPE };
+// Záložní přihlášení kódem v prohlížeči (microsoft.com/link), když se okno přihlášení nenačte.
+async function deviceCode(clientId) {
+  const res = await request('https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: clientId, scope: SCOPE }).toString()
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.device_code) throw new Error(data.error_description || data.error || `Microsoft přihlášení selhalo (${res.status}).`);
+  return data;
+}
+
+async function pollDevice(clientId, dc, isCancelled) {
+  let wait = Math.max(2, Number(dc.interval) || 5) * 1000;
+  const until = Date.now() + (Number(dc.expires_in) || 900) * 1000;
+  while (Date.now() < until) {
+    await new Promise((r) => setTimeout(r, wait));
+    if (isCancelled()) throw new Error('Přihlášení bylo zrušeno.');
+    const res = await request(TOKEN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: clientId, grant_type: 'urn:ietf:params:oauth:grant-type:device_code', device_code: dc.device_code }).toString()
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.access_token) return data;
+    if (data.error === 'authorization_pending') continue;
+    if (data.error === 'slow_down') { wait += 5000; continue; }
+    throw new Error(data.error === 'expired_token' ? 'Kód vypršel, zkus to prosím znovu.' : (data.error_description || data.error || 'Přihlášení selhalo.'));
+  }
+  throw new Error('Kód vypršel, zkus to prosím znovu.');
+}
+
+module.exports = { pkce, authorizeUrl, exchangeCode, refresh, fromMicrosoft, deviceCode, pollDevice, SCOPE };
