@@ -403,8 +403,8 @@
     const li = (arr) => arr.map((r) => `<li>${esc(r)}</li>`).join('');
     box.innerHTML = `
       ${I.highlight ? `<div class="in-god"><div class="in-god-ic">👑</div><div><b>${esc(I.highlight.title)}</b><span>${esc(I.highlight.text)}</span></div></div>` : ''}
-      <div class="in-hero"><div><b>Jak zažádat o rank tvůrce</b><span>Vyber si, co děláš, splň podmínky a pošli přihlášku na našem Discordu s odkazy na svůj obsah ze serveru.</span></div>
-        <a class="wb-btn" href="${esc(I.apply)}" target="_blank" rel="noopener">Přihláška (Discord)</a></div>
+      <div class="in-hero"><div><b>Jak zažádat o rank tvůrce</b><span>Vyber si, co děláš, splň podmínky a pošli žádost o spolupráci přímo tady na webu. Stačí být na našem Discordu – role Člen není potřeba.</span></div>
+        <button type="button" class="wb-btn" data-sp-open>Podat žádost o spolupráci</button></div>
       ${I.common_req ? `<div class="in-common">
         <div class="in-box"><h4>📋 Podmínky pro všechny tvůrce</h4><ul>${li(I.common_req)}</ul></div>
         <div class="in-box in-good"><h4>🎁 Co dostane každý tvůrce</h4><ul class="in-perks">${li(I.common_perks || [])}</ul></div></div>` : ''}
@@ -414,7 +414,7 @@
           <h4>Co získáš</h4><ul class="in-perks">${t.perks.map((r) => `<li${/GOD VIP/i.test(r) ? ' class="in-vip"' : ''}>${esc(r)}</li>`).join('')}</ul></div>`).join('')}</div>
       <div class="in-steps"><h3 class="sl-title">Jak to probíhá</h3><ol>
         <li><b>Natoč obsah</b><span>Reels, klipy, shorts, videa nebo streamy z Wylvarionu.</span></li>
-        <li><b>Pošli přihlášku</b><span>Na Discordu otevři ticket a přidej odkazy na svůj kanál a obsah.</span></li>
+        <li><b>Pošli žádost</b><span>V Žádostech → Spolupráce vyplň odkazy na svůj kanál a obsah. Stačí být na našem Discordu.</span></li>
         <li><b>Schválení</b><span>Admin team projde tvůj obsah a ozve se ti obvykle do pár dní.</span></li>
         <li><b>Rank a GOD VIP</b><span>Dostaneš rank tvůrce a GOD VIP natrvalo, dokud rank máš.</span></li></ol>
         <p class="cm-note">Když přestaneš tvořit obsah ze serveru (víc než měsíc nic) nebo porušíš pravidla, rank i GOD VIP se odebírají.</p></div>
@@ -423,6 +423,47 @@
         <a class="in-creator" href="${esc(c.url || '#')}" target="_blank" rel="noopener" style="--c:${t.color || '#a855f7'}"><img src="https://mc-heads.net/body/${encodeURIComponent(c.nick)}/140" alt="" loading="lazy"><b>${esc(c.nick)}</b><span>${esc(t.name || 'Tvůrce')}</span></a>`; }).join('')}</div>`
         : '<div class="cm-empty"><b>Zatím tu nikdo není.</b><span>Buď první tvůrce Wylvarionu a získej GOD VIP natrvalo!</span></div>'}`;
   }
+
+
+  /* =================== ŽÁDOST O SPOLUPRÁCI (tvůrci) =================== */
+  function spOpenTab() {
+    if (typeof showPanel === 'function') showPanel('zadosti');
+    document.querySelector('.zadost-tab[data-zadost-tab="spoluprace"]')?.click();
+  }
+  async function spGate() {
+    const gate = $('#spGate'), form = $('#spolupraceForm');
+    if (!gate || !form) return;
+    let st = { logged: false, inGuild: false };
+    try { st = await getJSON(`${API}/relay-spoluprace.php`); } catch (e) { /* nepřihlášen */ }
+    const login = `<a class="dc-btn" href="${API}/discord-login.php?ret=zadosti" data-sp-login>Přihlásit přes Discord</a>`;
+    const join = `<a class="btn btn-ghost btn-sm" href="https://discord.gg/Q7PUz7ARsS" target="_blank" rel="noopener">Připojit se na Discord</a>`;
+    if (st.inGuild) { gate.style.display = 'none'; form.style.display = ''; return; }
+    form.style.display = 'none';
+    gate.style.display = '';
+    gate.innerHTML = st.logged
+      ? `<b>Nejsi na našem Discordu</b><p>Žádost o spolupráci může poslat každý, kdo je na našem Discord serveru (role Člen není potřeba). Připoj se a pak se přihlas znovu.</p><div class="nw-logins">${join}${login}</div>`
+      : `<b>Přihlas se přes Discord</b><p>Žádost o spolupráci může poslat každý, kdo je na našem Discord serveru – role Člen není potřeba. Přihlášení trvá pár vteřin.</p><div class="nw-logins">${login}${join}</div>`;
+    gate.querySelectorAll('[data-sp-login]').forEach((a) => a.addEventListener('click', () => { try { sessionStorage.setItem('wylSpTab', '1'); } catch (e) { /* nic */ } }));
+  }
+  $('#spolupraceForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target, ok = $('#spOk'), err = $('#spErr'), btn = $('#spSubmit');
+    ok.style.display = 'none'; err.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Odesílám…';
+    const data = Object.fromEntries(new FormData(f).entries());
+    const r = await postJSON(`${API}/relay-spoluprace.php`, data);
+    btn.disabled = false; btn.textContent = 'Odeslat žádost o spolupráci';
+    if (r.ok) { ok.style.display = 'block'; f.reset(); return; }
+    err.textContent = r.error === 'discord_required' ? 'Nejdřív se přihlas přes Discord a připoj se na náš server.' : r.error === 'too_many' ? 'Moc žádostí za krátkou dobu, zkus to prosím později.' : 'Odeslání se nepovedlo. Zkus to prosím znovu.';
+    err.style.display = 'block';
+    if (r.error === 'discord_required') spGate();
+  });
+  document.querySelector('.zadost-tab[data-zadost-tab="spoluprace"]')?.addEventListener('click', spGate);
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-sp-open]')) { e.preventDefault(); spOpenTab(); spGate(); } }, true);
+  window.addEventListener('load', () => setTimeout(() => {
+    let f = null; try { f = sessionStorage.getItem('wylSpTab'); sessionStorage.removeItem('wylSpTab'); } catch (e) { /* nic */ }
+    if (f) { spOpenTab(); spGate(); }
+  }, 400));
 
   /* =================== ADMIN TEAM: banner + sociální sítě =================== */
   const SOC = {

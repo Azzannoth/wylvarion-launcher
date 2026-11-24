@@ -1,0 +1,50 @@
+        <div class="zadost-panel" id="zadost-tab-spoluprace" style="display:none;">
+          <div class="unban-note">
+            <h3>Spolupráce – rank tvůrce obsahu</h3>
+            <ul>
+              <li>Pro YouTubery, streamery a tvůrce krátkých videí (TikTok, Reels, Shorts).</li>
+              <li>Musíš být na našem Discordu – role Člen není potřeba, stačí být na serveru.</li>
+              <li>Přidej odkazy na svůj kanál a na obsah ze Wylvarionu (reels, klipy, videa, streamy).</li>
+              <li>Schválení tvůrci dostanou rank tvůrce a <b>GOD VIP natrvalo</b>, dokud rank mají. <a href="#influencer" data-tab-link="influencer">Podmínky a výhody →</a></li>
+            </ul>
+          </div>
+          <div class="dc-gate sp-gate" id="spGate" style="display:none;"></div>
+          <form class="unban-form" id="spolupraceForm" style="display:none;">
+            <input type="text" name="company" class="honey" autocomplete="off" tabindex="-1" aria-hidden="true">
+            <div class="field-row">
+              <div class="field">
+                <label for="spNick">Tvůj Minecraft nick</label>
+                <input id="spNick" name="nick" type="text" required maxlength="17" placeholder="Tvůj přesný nick">
+              </div>
+              <div class="field">
+                <label for="spTyp">Typ tvůrce</label>
+                <select id="spTyp" name="typ" required>
+                  <option value="YouTuber">🎬 YouTuber</option>
+                  <option value="Streamer">📺 Streamer</option>
+                  <option value="Short Form Creator">🎞️ Short Form Creator (TikTok, Reels, Shorts)</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="spKanal">Odkaz na kanál / profil</label>
+                <input id="spKanal" name="kanal" type="url" required maxlength="200" placeholder="https://…">
+              </div>
+              <div class="field">
+                <label for="spSled">Počet sledujících / odběratelů</label>
+                <input id="spSled" name="sledujici" type="text" required maxlength="20" placeholder="např. 450">
+              </div>
+            </div>
+            <div class="field">
+              <label for="spObsah">Odkazy na tvůj obsah ze Wylvarionu</label>
+              <textarea id="spObsah" name="obsah" rows="3" required maxlength="900" placeholder="Reels, klipy, videa nebo streamy ze serveru – každý odkaz na nový řádek."></textarea>
+            </div>
+            <div class="field">
+              <label for="spPlan">Co plánuješ ze serveru tvořit?</label>
+              <textarea id="spPlan" name="plan" rows="3" required maxlength="900" placeholder="Jak často, jaký obsah, na jakých platformách…"></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit" id="spSubmit">Odeslat žádost o spolupráci</button>
+            <div class="form-msg ok" id="spOk">Žádost odeslána! Sleduj svůj Discord – ozveme se ti, jakmile ji projdeme.</div>
+            <div class="form-msg err" id="spErr">Odeslání se nepovedlo. Zkus to prosím znovu.</div>
+          </form>
+        </div>
