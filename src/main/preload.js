@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld('wyl', {
   addModrinth: (id) => ipcRenderer.invoke('mods:addModrinth', id),
   open: (what) => ipcRenderer.invoke('open', what),
   external: (url) => ipcRenderer.invoke('external', url),
+  copy: (text) => ipcRenderer.invoke('copy', text),
+  repair: () => ipcRenderer.invoke('repair'),
   windowAction: (a) => ipcRenderer.invoke('window', a),
   installUpdate: () => ipcRenderer.invoke('update:install'),
   onProgress: on('progress'),

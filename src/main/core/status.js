@@ -89,6 +89,10 @@ async function ping(host, port = 25565, timeout = 5000) {
           max: json.players ? json.players.max : 0,
           version: json.version ? json.version.name : '',
           motd: textOf(json.description).replace(/§./g, ''),
+          // jména hráčů online (server jich posílá jen pár, jména se skrytým profilem vynecháme)
+          list: ((json.players && json.players.sample) || [])
+            .map((p) => String(p.name || '').replace(/§./g, ''))
+            .filter((n) => /^[A-Za-z0-9_]{2,16}$/.test(n)),
           ping: Date.now() - start
         });
       } catch (e) {

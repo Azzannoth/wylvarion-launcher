@@ -1,5 +1,5 @@
 'use strict';
-/* global wyl, skinview3d */
+/* global wyl, skinview3d, t, applyI18n, setLang, modDesc, LANG */
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -31,8 +31,10 @@ $$('.nav[data-page]').forEach((b) =>
     $$('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + b.dataset.page));
     if (b.dataset.page === 'mods') renderCustomMods();
     if (b.dataset.page === 'skins') openSkins();
+    if (b.dataset.page === 'server') refreshStatus();
   })
 );
+$('#serverCard').addEventListener('click', () => $('.nav[data-page="server"]').click());
 $$('.nav[data-link]').forEach((b) => b.addEventListener('click', () => state && wyl.external(state.config.links[b.dataset.link])));
 $$('[data-win]').forEach((b) => b.addEventListener('click', () => wyl.windowAction(b.dataset.win)));
 $$('[data-open]').forEach((b) => b.addEventListener('click', () => wyl.open(b.dataset.open)));
@@ -42,7 +44,7 @@ function renderAccount() {
   const acc = state.account;
   const box = $('#account');
   if (!acc) {
-    box.innerHTML = '<button class="btn" id="accLogin" style="width:100%">Přihlásit se</button>';
+    box.innerHTML = `<button class="btn" id="accLogin" style="width:100%">${esc(t('login.side'))}</button>`;
     $('#accLogin').onclick = showLogin;
     $('#skinName').textContent = '';
     return;
@@ -51,7 +53,7 @@ function renderAccount() {
     <img src="https://mc-heads.net/avatar/${esc(acc.uuid)}/36" alt="">
     <div style="min-width:0">
       <div class="name">${esc(acc.name)}</div>
-      <button class="logout" id="logoutBtn">Odhlásit se</button>
+      <button class="logout" id="logoutBtn">${esc(t('login.logout'))}</button>
     </div>`;
   $('#logoutBtn').onclick = async () => {
     await wyl.logout();
@@ -67,9 +69,7 @@ function renderAccount() {
 function showLogin() {
   $('#loginOverlay').hidden = false;
   $('#loginError').textContent = '';
-  $('#loginInfo').textContent = state.config.loginReady
-    ? 'Otevře se okno Microsoftu. Heslo zadáváš přímo Microsoftu, launcher ho nikdy nevidí.'
-    : 'Přihlášení zatím není aktivované – správce serveru musí dokončit registraci aplikace u Microsoftu.';
+  $('#loginInfo').textContent = state.config.loginReady ? t('login.info') : t('login.notReady');
   $('#loginBtn').disabled = !state.config.loginReady;
 }
 
@@ -83,7 +83,7 @@ $('#loginBtn').addEventListener('click', async () => {
     loadSkin();
     sk.loaded = false;
     if ($('#page-skins').classList.contains('active')) openSkins();
-    toast(`Vítej, ${state.account.name}!`);
+    toast(t('login.welcome', { name: state.account.name }));
   } catch (e) {
     $('#loginError').textContent = cleanErr(e);
   } finally {
@@ -212,19 +212,19 @@ function skinFail(r) {
     renderAccount();
     showLogin();
   }
-  toast((r && r.error) || 'Něco se nepovedlo.', true);
+  toast((r && r.error) || t('toast.error'), true);
 }
 
 function renderCapes() {
   const capes = (sk.current && sk.current.capes) || [];
   const box = $('#capeList');
   if (!capes.length) {
-    box.innerHTML = '<p class="muted small" style="margin:0">Tvůj účet nemá žádný plášť.</p>';
+    box.innerHTML = `<p class="muted small" style="margin:0">${esc(t('skin.noCape'))}</p>`;
     return;
   }
   const none = !capes.some((c) => c.active);
   box.innerHTML =
-    `<button class="cape ${none ? 'active' : ''}" data-cape=""><span class="none">✕</span>Bez pláště</button>` +
+    `<button class="cape ${none ? 'active' : ''}" data-cape=""><span class="none">✕</span>${esc(t('skin.capeNone'))}</button>` +
     capes.map((c) => `<button class="cape ${c.active ? 'active' : ''}" data-cape="${esc(c.id)}"><canvas></canvas>${esc(c.name)}</button>`).join('');
   capes.forEach((c, i) => c.dataUrl && drawCape(box.querySelectorAll('canvas')[i], c.dataUrl).catch(() => {}));
   $$('#capeList [data-cape]').forEach((b) =>
@@ -241,7 +241,7 @@ function renderCapes() {
       sk.current = { ...sk.current, capes: r.capes };
       renderCapes();
       showSkinPreview();
-      toast(b.dataset.cape ? 'Plášť nastaven.' : 'Plášť schován.');
+      toast(b.dataset.cape ? t('skin.capeSet') : t('skin.capeHidden'));
     })
   );
 }
@@ -250,13 +250,13 @@ function renderLibrary(list) {
   sk.library = list || sk.library || [];
   const box = $('#skinLib');
   if (!sk.library.length) {
-    box.innerHTML = '<p class="muted">Zatím žádné uložené skiny. Nahraj nový nebo ulož ten, co máš teď.</p>';
+    box.innerHTML = `<p class="muted">${esc(t('skin.libEmpty'))}</p>`;
     return;
   }
   box.innerHTML = sk.library
-    .map((s) => `<div class="lib-item" data-id="${esc(s.id)}" title="${esc(s.name)} (${s.variant === 'slim' ? 'tenká' : 'klasická'} postava)">
+    .map((s) => `<div class="lib-item" data-id="${esc(s.id)}" title="${esc(s.name)} (${s.variant === 'slim' ? t('skin.slimShort') : t('skin.classicShort')} ${t('skin.body')})">
         <canvas></canvas><div class="lname">${esc(s.name)}</div>
-        <button class="del" data-del="${esc(s.id)}" title="Smazat">✕</button></div>`)
+        <button class="del" data-del="${esc(s.id)}" title="${esc(t('skin.del'))}">✕</button></div>`)
     .join('');
   sk.library.forEach((s, i) => drawFront(box.querySelectorAll('canvas')[i], s.dataUrl, s.variant === 'slim').catch(() => {}));
   $$('#skinLib .lib-item').forEach((el) =>
@@ -279,18 +279,18 @@ function clearPending() {
   $('#skinReset').hidden = true;
   $('#skinTitle').value = '';
   if (sk.current) setVariant(sk.current.variant);
-  skinState('Tvůj aktuální skin');
+  skinState(t('skin.current'));
 }
 
 async function applySkin(opts) {
   if (sk.busy) return;
   sk.busy = true;
   $('#skinApply').disabled = true;
-  skinState('Nastavuji skin…', true);
+  skinState(t('skin.setting'), true);
   const r = await wyl.skins.apply(opts);
   sk.busy = false;
   if (!r.ok) {
-    skinState(sk.pending ? 'Nový skin ještě není nastavený' : 'Tvůj aktuální skin', Boolean(sk.pending));
+    skinState(sk.pending ? t('skin.notSet') : t('skin.current'), Boolean(sk.pending));
     $('#skinApply').disabled = !sk.pending;
     return skinFail(r);
   }
@@ -299,25 +299,25 @@ async function applySkin(opts) {
   clearPending();
   showSkinPreview();
   loadSkin();
-  toast('Skin nastaven! Ve hře ho uvidíš po dalším připojení na server.');
+  toast(t('skin.done'));
 }
 
 async function openSkins(force) {
   if (!state.account) {
-    skinState('Pro změnu skinu se nejdřív přihlas.');
+    skinState(t('skin.loginFirst'));
     return;
   }
   if (sk.loaded && !force) return;
-  skinState('Načítám skin…');
+  skinState(t('skin.loading'));
   const r = await wyl.skins.state();
   if (!r.ok) {
-    skinState('Skin se nepodařilo načíst.');
+    skinState(t('skin.loadFail'));
     return skinFail(r);
   }
   sk.loaded = true;
   sk.current = r;
   setVariant(r.variant);
-  skinState('Tvůj aktuální skin');
+  skinState(t('skin.current'));
   renderCapes();
   renderLibrary(r.library);
   showSkinPreview();
@@ -342,7 +342,7 @@ $('#skinPick').addEventListener('click', async () => {
   $('#skinTitle').value = r.name;
   $('#skinApply').disabled = false;
   $('#skinReset').hidden = false;
-  skinState('Náhled – skin ještě není nastavený', true);
+  skinState(t('skin.preview'), true);
   showSkinPreview();
 });
 
@@ -365,16 +365,70 @@ $('#skinSaveCurrent').addEventListener('click', async () => {
   const r = await wyl.skins.saveCurrent();
   if (!r.ok) return skinFail(r);
   renderLibrary(r.library);
-  toast('Aktuální skin uložen do Mých skinů.');
+  toast(t('skin.savedCurrent'));
 });
 
 /* ---------- Stav serveru a novinky ---------- */
+let lastStatus = null;
 async function refreshStatus() {
   const s = await wyl.status();
-  const dot = $('#statusDot');
-  dot.className = 'status-dot ' + (s.online ? 'on' : 'off');
-  $('#serverSub').textContent = s.online ? `${s.players}/${s.max} hráčů online · ${s.ping} ms` : 'Server je offline';
+  lastStatus = s;
+  renderStatus();
 }
+
+function renderStatus() {
+  const s = lastStatus;
+  if (!s) return;
+  $('#statusDot').className = 'status-dot ' + (s.online ? 'on' : 'off');
+  $('#serverSub').textContent = s.online ? t('status.online', { players: s.players, max: s.max, ping: s.ping }) : t('status.offline');
+  renderServerPage();
+}
+
+/* ---------- Stránka Server ---------- */
+const LINKS = [
+  ['web', '🌐', 'link.web'],
+  ['map', '🗺️', 'link.map'],
+  ['vote', '🗳️', 'link.vote'],
+  ['rules', '📜', 'link.rules'],
+  ['wiki', '📖', 'link.wiki'],
+  ['events', '🎉', 'link.events'],
+  ['shop', '💎', 'link.shop'],
+  ['discord', '💬', 'link.discord'],
+  ['team', '🛡️', 'link.team'],
+  ['banlist', '⛔', 'link.banlist']
+];
+
+function renderServerPage() {
+  const s = lastStatus || {};
+  $('#srvIp').textContent = state.config.server.host;
+  $('#srvDot').className = 'status-dot ' + (s.online ? 'on' : 'off');
+  $('#srvState').textContent = s.online ? t('server.statusOn') : t('server.statusOff');
+  $('#srvMotd').textContent = s.online ? s.motd || '' : '';
+  $('#srvPlayers').textContent = s.online ? `${s.players}/${s.max}` : '–';
+  $('#srvPing').textContent = s.online ? `${s.ping} ms` : '–';
+  $('#srvVersion').textContent = s.online ? (s.version || '').replace(/^[A-Za-z]+\s+/, '') || state.config.minecraft : state.config.minecraft;
+  const list = s.list || [];
+  $('#srvList').innerHTML = !s.online
+    ? `<p class="muted">${esc(t('status.offline'))}</p>`
+    : list.length
+    ? list.map((n) => `<div class="pl"><img src="https://mc-heads.net/avatar/${encodeURIComponent(n)}/32" alt=""><span>${esc(n)}</span></div>`).join('') +
+      (s.players > list.length ? `<div class="pl more">+${s.players - list.length}</div>` : '')
+    : `<p class="muted">${esc(s.players ? t('server.hidden') : t('server.nobody'))}</p>`;
+  const links = state.config.links || {};
+  $('#srvLinks').innerHTML = LINKS.filter(([k]) => links[k])
+    .map(([k, ico, key]) => `<button class="srv-link" data-url="${esc(links[k])}"><span class="ico">${ico}</span>${esc(t(key))}</button>`)
+    .join('');
+  const votes = state.config.voteSites || [];
+  $('#srvVotes').innerHTML = votes
+    .map((v) => `<button class="vote" data-url="${esc(v.url)}" style="--c:${esc(v.color || '#7a5cff')}"><span class="code">${esc(v.code || '')}</span>${esc(v.name)}</button>`)
+    .join('');
+  $$('#page-server [data-url]').forEach((b) => (b.onclick = () => wyl.external(b.dataset.url)));
+}
+
+$('#srvCopy').addEventListener('click', async () => {
+  await wyl.copy(state.config.server.host);
+  toast(t('server.copied'));
+});
 
 function renderNews() {
   const list = state.config.news || [];
@@ -385,24 +439,26 @@ function renderNews() {
           (n) => `<div class="news-item">
             <div class="date">${esc(n.date || '')}</div>
             <div class="title">${esc(n.title || '')}</div>
-            <div class="text">${esc(n.text || '')}${n.url ? ` <a href="#" data-url="${esc(n.url)}">Více</a>` : ''}</div>
+            <div class="text">${esc(n.text || '')}${n.url ? ` <a href="#" data-url="${esc(n.url)}">${esc(t('home.more'))}</a>` : ''}</div>
           </div>`
         )
         .join('')
-    : '<div class="news-item"><div class="text">Novinky najdeš na webu wylvarion.cz.</div></div>';
+    : `<div class="news-item"><div class="text">${esc(t('home.noNews'))}</div></div>`;
   $$('#news a[data-url]').forEach((a) => a.addEventListener('click', (e) => (e.preventDefault(), wyl.external(a.dataset.url))));
 }
 
 /* ---------- Hraní ---------- */
-const STAGES = { start: 0, meta: 0.02, client: 0.05, libraries: 0.1, assets: 0.3, mods: 0.7, pack: 0.75, java: 0.8, launch: 1 };
+const STAGES = { start: 0, meta: 0.02, client: 0.05, libraries: 0.1, assets: 0.3, mods: 0.6, pack: 0.65, intro: 0.7, java: 0.85, launch: 1 };
+let lastProgress = null;
 
 function setProgress(p) {
+  lastProgress = p;
   const fill = $('#progressFill');
   const text = $('#progressText');
   if (!p || p.stage === 'idle') {
     fill.classList.remove('indeterminate');
     fill.style.width = '0';
-    text.textContent = playing ? 'Hra běží' : 'Připraveno ke hře';
+    text.textContent = playing ? t('home.running') : t('home.ready');
     return;
   }
   if (p.stage === 'error') {
@@ -417,17 +473,19 @@ function setProgress(p) {
   const next = STAGES[keys[keys.indexOf(p.stage) + 1]] ?? 1;
   fill.classList.toggle('indeterminate', p.stage === 'login');
   fill.style.width = `${Math.round((base + (next - base) * part) * 100)}%`;
-  text.textContent = p.total > 1 ? `${p.text} ${p.done}/${p.total}` : p.text;
+  // text podle fáze v jazyce launcheru (z hlavního procesu chodí česky)
+  const label = I18N.cs['stage.' + p.stage] ? t('stage.' + p.stage) : p.text;
+  text.textContent = p.total > 1 ? `${label} ${p.done}/${p.total}` : label;
 }
 
 $('#playBtn').addEventListener('click', async () => {
   if (!state.account) return showLogin();
   $('#playBtn').disabled = true;
-  $('#playBtn span').textContent = 'SPOUŠTÍM';
+  $('#playBtn span').textContent = t('play.starting');
   const r = await wyl.play();
   if (!r || !r.ok) {
     $('#playBtn').disabled = false;
-    $('#playBtn span').textContent = 'HRÁT';
+    $('#playBtn span').textContent = t('play.play');
     if (r && r.code === 'LOGIN') {
       state.account = null;
       renderAccount();
@@ -438,7 +496,8 @@ $('#playBtn').addEventListener('click', async () => {
 });
 
 wyl.onProgress(setProgress);
-wyl.onNotice((t) => toast(t));
+// Upozornění z hlavního procesu: buď text, nebo { key, vars } k překladu.
+wyl.onNotice((n) => toast(typeof n === 'string' ? n : t(n.key, n.vars)));
 wyl.onAccount((acc) => {
   state.account = acc;
   renderAccount();
@@ -446,20 +505,27 @@ wyl.onAccount((acc) => {
 wyl.onGameState((g) => {
   playing = g.running;
   $('#playBtn').disabled = g.running;
-  $('#playBtn span').textContent = g.running ? 'HRA BĚŽÍ' : 'HRÁT';
+  $('#playBtn span').textContent = g.running ? t('play.running') : t('play.play');
   setProgress({ stage: 'idle' });
   if (!g.running && g.code && g.code !== 0) {
-    toast('Hra se neočekávaně ukončila. Log najdeš v Nastavení → Logy (launcher-last.log).', true);
+    toast(t('toast.crash'), true);
   }
 });
-wyl.onUpdate((u) => {
+let lastUpdate = null;
+function renderUpdate() {
+  const u = lastUpdate;
+  if (!u) return;
   $('#updateBar').hidden = false;
   if (u.state === 'ready') {
-    $('#updateText').textContent = `Nová verze ${u.version} je připravená.`;
+    $('#updateText').textContent = t('upd.ready', { version: u.version });
     $('#updateBtn').hidden = false;
   } else {
-    $('#updateText').textContent = `Stahuji aktualizaci launcheru${u.percent != null ? ` (${u.percent} %)` : ''}…`;
+    $('#updateText').textContent = t('upd.downloading', { pct: u.percent != null ? ` (${u.percent} %)` : '' });
   }
+}
+wyl.onUpdate((u) => {
+  lastUpdate = u;
+  renderUpdate();
 });
 $('#updateBtn').addEventListener('click', () => wyl.installUpdate());
 
@@ -482,16 +548,16 @@ function renderMods() {
     .map((m) => {
       const on = modOn(m);
       const control = m.required
-        ? '<span class="lock">povinný</span>'
+        ? `<span class="lock">${esc(t('mods.required'))}</span>`
         : `<label class="switch"><input type="checkbox" data-mod="${esc(m.id)}" ${on ? 'checked' : ''}><span></span></label>`;
-      return `<div class="mod"><div class="info"><div class="mname">${esc(m.name)}</div><div class="mdesc">${esc(m.desc || '')}</div></div>${control}</div>`;
+      return `<div class="mod"><div class="info"><div class="mname">${esc(m.name)}</div><div class="mdesc">${esc(modDesc(m))}</div></div>${control}</div>`;
     })
     .join('');
   $$('#modList input[data-mod]').forEach((i) =>
     i.addEventListener('change', async () => {
       await setModOn(i.dataset.mod, i.checked);
       if (i.dataset.mod === 'reimagined-intro') $('#introOn').checked = $('#quickIntro').checked = i.checked;
-      toast('Změna se projeví při dalším spuštění hry.');
+      toast(t('mods.changed'));
     })
   );
 }
@@ -500,9 +566,9 @@ async function renderCustomMods(list) {
   const mods = list || (await wyl.customMods());
   $('#customList').innerHTML = mods.length
     ? mods
-        .map((m) => `<div class="mod"><div class="info"><div class="mname">${esc(m)}</div></div><button class="btn small danger" data-rm="${esc(m)}">Odebrat</button></div>`)
+        .map((m) => `<div class="mod"><div class="info"><div class="mname">${esc(m)}</div></div><button class="btn small danger" data-rm="${esc(m)}">${esc(t('mods.remove'))}</button></div>`)
         .join('')
-    : '<p class="muted">Zatím žádné vlastní mody.</p>';
+    : `<p class="muted">${esc(t('mods.noCustom'))}</p>`;
   $$('#customList [data-rm]').forEach((b) => b.addEventListener('click', async () => renderCustomMods(await wyl.removeJar(b.dataset.rm))));
 }
 
@@ -511,32 +577,32 @@ $('#addJar').addEventListener('click', async () => renderCustomMods(await wyl.ad
 async function doSearch() {
   const q = $('#modSearch').value.trim();
   if (!q) return;
-  $('#searchList').innerHTML = '<p class="muted">Hledám…</p>';
+  $('#searchList').innerHTML = `<p class="muted">${esc(t('mods.searching'))}</p>`;
   try {
     const hits = await wyl.searchMods(q);
     $('#searchList').innerHTML = hits.length
       ? hits
           .map(
-            (h) => `<div class="mod">${h.icon ? `<img src="${esc(h.icon)}" alt="">` : ''}<div class="info"><div class="mname">${esc(h.name)}</div><div class="mdesc">${esc(h.desc)}</div></div><button class="btn small" data-add="${esc(h.id)}">Přidat</button></div>`
+            (h) => `<div class="mod">${h.icon ? `<img src="${esc(h.icon)}" alt="">` : ''}<div class="info"><div class="mname">${esc(h.name)}</div><div class="mdesc">${esc(h.desc)}</div></div><button class="btn small" data-add="${esc(h.id)}">${esc(t('mods.add'))}</button></div>`
           )
           .join('')
-      : '<p class="muted">Nic nenalezeno pro tuto verzi hry.</p>';
+      : `<p class="muted">${esc(t('mods.nothing'))}</p>`;
     $$('#searchList [data-add]').forEach((b) =>
       b.addEventListener('click', async () => {
         b.disabled = true;
-        b.textContent = 'Stahuji…';
+        b.textContent = t('mods.downloading');
         try {
           renderCustomMods(await wyl.addModrinth(b.dataset.add));
-          b.textContent = 'Přidáno';
+          b.textContent = t('mods.added');
         } catch (e) {
           toast(cleanErr(e), true);
           b.disabled = false;
-          b.textContent = 'Přidat';
+          b.textContent = t('mods.add');
         }
       })
     );
   } catch (e) {
-    $('#searchList').innerHTML = `<p class="muted">Vyhledávání selhalo: ${esc(cleanErr(e))}</p>`;
+    $('#searchList').innerHTML = `<p class="muted">${esc(t('mods.searchFail', { err: cleanErr(e) }))}</p>`;
   }
 }
 $('#modSearchBtn').addEventListener('click', doSearch);
@@ -554,8 +620,7 @@ function renderSettings() {
   ram.oninput = () => ($('#ramVal').textContent = fmtMem(+ram.value));
   ram.onchange = () => wyl.setSettings({ memoryMb: +ram.value });
 
-  const tiers = { low: 'slabší', medium: 'střední', high: 'výkonná' };
-  $('#gpuTier').textContent = tiers[state.gpuTier] || state.gpuTier;
+  $('#gpuTier').textContent = t('gpu.' + state.gpuTier);
   const setShader = async (v) => {
     if (v !== 'off') state.settings.lastShaderPreset = v;
     state.settings.shaderPreset = v;
@@ -568,11 +633,12 @@ function renderSettings() {
   $('#shader').onchange = () => setShader($('#shader').value);
   $('#quickShaders').onchange = () => {
     setShader($('#quickShaders').checked ? state.settings.lastShaderPreset || 'auto' : 'off');
-    toast($('#quickShaders').checked ? 'Shadery zapnuté.' : 'Shadery vypnuté.');
+    toast($('#quickShaders').checked ? t('toast.shadersOn') : t('toast.shadersOff'));
   };
 
   const intro = (state.config.mods || []).find((m) => m.id === 'reimagined-intro');
   $('#introSetting').hidden = !intro;
+  $('#introPackSetting').hidden = !intro;
   $('#quickIntroBox').hidden = !intro;
   if (intro) {
     $('#introOn').checked = $('#quickIntro').checked = modOn(intro);
@@ -580,11 +646,33 @@ function renderSettings() {
       await setModOn('reimagined-intro', on);
       $('#introOn').checked = $('#quickIntro').checked = on;
       renderMods();
-      toast(on ? 'Intro zapnuté.' : 'Intro vypnuté. Hra se načte rychleji a spotřebuje méně paměti.');
+      $('#introPackSetting').classList.toggle('dim', !on);
+      toast(on ? t('toast.introOn') : t('toast.introOff'));
     };
     $('#introOn').onchange = () => setIntro($('#introOn').checked);
     $('#quickIntro').onchange = () => setIntro($('#quickIntro').checked);
+    $('#introPackSetting').classList.toggle('dim', !modOn(intro));
+    $('#introPack').value = s.introPack || 'wylvarion';
+    $('#introPack').onchange = () => wyl.setSettings({ introPack: $('#introPack').value });
   }
+
+  $('#resolution').value = s.width && s.height ? `${s.width}x${s.height}` : '';
+  $('#resolution').onchange = () => {
+    const [w, h] = ($('#resolution').value || 'x').split('x');
+    wyl.setSettings({ width: +w || null, height: +h || null });
+  };
+  $('#fullscreen').checked = Boolean(s.fullscreen);
+  $('#fullscreen').onchange = () => wyl.setSettings({ fullscreen: $('#fullscreen').checked });
+
+  $('#repairBtn').onclick = async () => {
+    await wyl.repair();
+    toast(t('set.repairDone'));
+  };
+
+  $$('#langBox .lang').forEach((b) => {
+    b.classList.toggle('active', b.dataset.lang === LANG);
+    b.onclick = () => changeLang(b.dataset.lang);
+  });
 
   $('#autoJoin').checked = Boolean(s.autoJoin);
   $('#autoJoin').onchange = () => wyl.setSettings({ autoJoin: $('#autoJoin').checked });
@@ -598,32 +686,58 @@ function renderSettings() {
     if (r) {
       state.settings.root = r;
       $('#rootPath').textContent = r;
-      toast('Složka změněna. Hra se při dalším spuštění stáhne do nové složky.');
+      toast(t('set.rootChanged'));
     }
   };
-  $('#appVersion').textContent = state.version;
+  $('#about').textContent = t('about', { version: state.version, mc: state.config.minecraft });
   $$('.mcver').forEach((e) => (e.textContent = state.config.minecraft));
+}
+
+/* ---------- Jazyk ---------- */
+function renderAll() {
+  applyI18n();
+  renderAccount();
+  renderNews();
+  renderMods();
+  renderSettings();
+  renderStatus();
+  renderServerPage();
+  renderUpdate();
+  if (sk.loaded) {
+    renderCapes();
+    renderLibrary();
+    skinState(sk.pending ? t('skin.preview') : t('skin.current'), Boolean(sk.pending));
+  } else if (!state.account) skinState(t('skin.loginFirst'));
+  $('#playBtn span').textContent = playing ? t('play.running') : t('play.play');
+  setProgress(lastProgress && lastProgress.stage !== 'idle' ? lastProgress : { stage: 'idle' });
+  if (!$('#loginOverlay').hidden) showLogin();
+}
+
+async function changeLang(l) {
+  if (l === LANG) return;
+  setLang(l);
+  state.settings = { ...state.settings, ...(await wyl.setSettings({ lang: l })) };
+  renderAll();
+  toast(t('toast.langChanged'));
 }
 
 /* ---------- Start ---------- */
 (async function init() {
   state = await wyl.state();
+  setLang(state.settings.lang || state.lang || 'cs');
   $('#serverName').textContent = state.config.server.host;
-  renderAccount();
-  renderNews();
-  renderMods();
-  renderSettings();
+  renderAll();
   loadSkin();
   refreshStatus();
   setInterval(refreshStatus, 30000);
   if (state.running) {
     playing = true;
     $('#playBtn').disabled = true;
-    $('#playBtn span').textContent = 'HRA BĚŽÍ';
+    $('#playBtn span').textContent = t('play.running');
   }
   if (!state.account) showLogin();
   if (!state.settings.firstRunDone) {
-    toast('Tip: v Nastavení si můžeš upravit paměť a shadery, v Modech přidat vlastní mody.');
+    toast(t('toast.tip'));
     wyl.setSettings({ firstRunDone: true });
   }
 })();

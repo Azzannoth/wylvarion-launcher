@@ -44,8 +44,24 @@
   },
   "links": {
     "web": "https://wylvarion.cz",
-    "discord": "https://discord.gg/Q7PUz7ARsS",
+    "map": "https://mapa.wylvarion.cz",
+    "vote": "https://wylvarion.cz/#vote",
+    "rules": "https://wylvarion.cz/#rules",
+    "wiki": "https://wylvarion.cz/#wiki",
+    "events": "https://wylvarion.cz/#eventy",
     "shop": "https://wylvarion.cz/#shop",
-    "rules": "https://wylvarion.cz/#pravidla"
+    "discord": "https://discord.gg/Q7PUz7ARsS",
+    "team": "https://wylvarion.cz/#team",
+    "banlist": "https://wylvarion.cz/#banlist"
+  },
+  "voteSites": [
+    {"name": "MCservery.cz", "code": "MC", "url": "https://mcservery.cz/server/wylvarion", "color": "#8a5bd8"},
+    {"name": "Czech-Craft", "code": "CC", "url": "https://czech-craft.eu/server/wylvarion/vote/", "color": "#e23d5b"},
+    {"name": "CraftList", "code": "CL", "url": "https://craftlist.org/wylvarion", "color": "#2f8fe0"},
+    {"name": "MinecraftServery", "code": "MS", "url": "https://minecraftservery.eu/server/wylvarion", "color": "#3fa796"},
+    {"name": "Minecraft-list", "code": "ML", "url": "https://www.minecraft-list.cz/server/wylvarion", "color": "#e8a23d"}
+  ],
+  "intro": {
+    "manifest": "https://raw.githubusercontent.com/Azzannoth/wylvarion-launcher/intro-pack/manifest.json"
   }
 }

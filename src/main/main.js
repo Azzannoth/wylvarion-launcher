@@ -5,7 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, clipboard } = require('electron');
 
 const store = require('./store');
 const auth = require('./core/auth');
@@ -19,6 +19,8 @@ const { defaultRoot, layout } = require('./core/paths');
 const servers = require('./core/servers');
 const skins = require('./core/skins');
 const serverpack = require('./core/serverpack');
+const intro = require('./core/intro');
+const { setOptions, GAME_LANG } = require('./core/options');
 
 let win = null;
 let config = null;
@@ -155,6 +157,15 @@ function modDefault(m) {
   return !(m.weakPc === false && weakPc());
 }
 
+// Jazyk launcheru: z nastavení, jinak podle systému (sk → slovenština, cs → čeština, jinak angličtina).
+function currentLang() {
+  if (['cs', 'sk', 'en'].includes(settings.lang)) return settings.lang;
+  const loc = String(app.getLocale() || '').toLowerCase();
+  if (loc.startsWith('sk')) return 'sk';
+  if (loc.startsWith('cs')) return 'cs';
+  return 'en';
+}
+
 async function selectedModList() {
   const opt = settings.optionalMods || {};
   return (config.mods || []).filter((m) => m.required || (m.id in opt ? opt[m.id] : modDefault(m)));
@@ -183,10 +194,10 @@ async function play() {
     try {
       const { files, missing } = await mods.resolve(await selectedModList(), config.minecraft);
       await mods.sync(d.mods, files, progress);
-      if (missing.length) send('notice', `Některé mody zatím nejsou pro ${config.minecraft}: ${missing.map((m) => m.name).join(', ')}`);
+      if (missing.length) send('notice', { key: 'notice.modsMissing', vars: { mc: config.minecraft, list: missing.map((m) => m.name).join(', ') } });
     } catch (e) {
       // Bez internetu spustíme s mody, které už jsou stažené.
-      send('notice', 'Mody se nepodařilo zkontrolovat, spouštím s uloženými.');
+      send('notice', { key: 'notice.modsOffline' });
     }
 
     const shader = shaderChoice();
@@ -196,7 +207,7 @@ async function play() {
         settings.appliedShader = shader;
         store.saveSettings(settings);
       } catch (e) {
-        send('notice', `Shader se nepodařilo nastavit: ${e.message}`);
+        send('notice', { key: 'notice.shader', vars: { err: e.message } });
       }
     }
 
@@ -211,14 +222,40 @@ async function play() {
         localPack = true;
       }
     } catch (e) {
-      send('notice', 'Resource pack serveru se nepodařilo stáhnout předem, stáhne se při připojení.');
+      send('notice', { key: 'notice.pack' });
     }
 
     // Server v seznamu serverů; pack od serveru přijmout jen když ho nemáme nainstalovaný sami (stáhne se sám, bez dotazu).
     try {
       servers.ensureServer(d.game, config.server, { acceptTextures: localPack ? 0 : 1 });
     } catch (e) {
-      send('notice', `Nepodařilo se nastavit seznam serverů: ${e.message}`);
+      send('notice', { key: 'notice.servers', vars: { err: e.message } });
+    }
+
+    // Intro Wylvarionu pro Reimagined Intro (jen když je mod zapnutý).
+    if ((await selectedModList()).some((m) => m.id === 'reimagined-intro')) {
+      try {
+        await intro.prepare(d, config.intro, settings.introPack || 'wylvarion', progress);
+      } catch (e) {
+        send('notice', { key: 'notice.intro' });
+      }
+    }
+
+    // Jazyk hry a celá obrazovka – zapisujeme jen po změně v launcheru, ať nepřepisujeme volby ze hry.
+    try {
+      const lang = currentLang();
+      const want = { lang: GAME_LANG[lang], fullscreen: settings.fullscreen ? 'true' : 'false' };
+      const patch = {};
+      if (settings.appliedGameLang !== want.lang) patch.lang = want.lang;
+      if (settings.appliedFullscreen !== want.fullscreen) patch.fullscreen = want.fullscreen;
+      if (Object.keys(patch).length) {
+        setOptions(d.game, patch);
+        settings.appliedGameLang = want.lang;
+        settings.appliedFullscreen = want.fullscreen;
+        store.saveSettings(settings);
+      }
+    } catch {
+      /* není podstatné */
     }
 
     const component = (installed.vanilla.javaVersion && installed.vanilla.javaVersion.component) || 'java-runtime-epsilon';
@@ -308,12 +345,14 @@ function setupIpc() {
     recommendedMemoryMb: recommendedMemory(),
     gpuTier: mods.gpuTier(app._gpuInfo),
     weakPc: weakPc(),
+    lang: currentLang(),
     config: {
       server: config.server,
       minecraft: config.minecraft,
       mods: config.mods,
       shaders: config.shaders,
       links: config.links,
+      voteSites: config.voteSites || [],
       news: config.news || [],
       loginReady: Boolean(config.microsoft.clientId)
     },
@@ -447,7 +486,7 @@ function setupIpc() {
   });
 
   ipcMain.handle('settings:set', (e, patch) => {
-    const allowedKeys = ['memoryMb', 'shaderPreset', 'optionalMods', 'afterLaunch', 'autoJoin', 'width', 'height', 'root', 'firstRunDone'];
+    const allowedKeys = ['memoryMb', 'shaderPreset', 'optionalMods', 'afterLaunch', 'autoJoin', 'width', 'height', 'root', 'firstRunDone', 'lang', 'introPack', 'fullscreen'];
     for (const k of allowedKeys) if (k in patch) settings[k] = patch[k];
     store.saveSettings(settings);
     return settings;
@@ -495,6 +534,22 @@ function setupIpc() {
       fs.mkdirSync(map[what], { recursive: true });
       shell.openPath(map[what]);
     }
+  });
+
+  ipcMain.handle('copy', (e, text) => clipboard.writeText(String(text || '').slice(0, 200)));
+
+  // Oprava: při dalším spuštění znovu stáhnout a ověřit resource pack, intro a shader.
+  // Mody launcher ověřuje podle SHA-1 při každém spuštění, poškozené stáhne znovu sám.
+  ipcMain.handle('repair', async () => {
+    const d = dirs();
+    for (const p of [path.join(d.root, 'serverpack'), path.join(d.root, 'intro-state.json'), path.join(d.game, 'intros', intro.FILE_NAME)]) {
+      await fs.promises.rm(p, { recursive: true, force: true }).catch(() => {});
+    }
+    settings.appliedShader = undefined;
+    settings.appliedGameLang = undefined;
+    settings.appliedFullscreen = undefined;
+    store.saveSettings(settings);
+    return true;
   });
 
   ipcMain.handle('external', (e, url) => {

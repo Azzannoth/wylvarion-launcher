@@ -342,3 +342,71 @@ test('servers.dat: s lokálním packem se pack od serveru odmítne', () => {
   ensureServer(dir, server, { acceptTextures: 0 });
   assert.equal(at(), 0);
 });
+
+test('intro: spojí části, ověří SHA-1, vybere balíček a nechá ostatní volby modu', async () => {
+  const fs = require('fs');
+  const os = require('os');
+  const crypto = require('crypto');
+  const intro = require('../src/main/core/intro');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wylintro-'));
+  const dirs = { root, game: path.join(root, 'game') };
+  const whole = Buffer.from('INTRO-ZIP-' + 'x'.repeat(1000));
+  const parts = { part_00: whole.subarray(0, 600), part_01: whole.subarray(600) };
+  const manifest = { id: 'wylvarion_test', version: '1', file: 'wylvarion-intro.zip', size: whole.length, sha1: crypto.createHash('sha1').update(whole).digest('hex'), parts: ['part_00', 'part_01'] };
+  let gets = 0;
+  const realFetch = global.fetch;
+  global.fetch = async (url) => {
+    const name = url.split('/').pop();
+    if (name === 'manifest.json') return new Response(JSON.stringify(manifest), { status: 200 });
+    gets++;
+    return new Response(parts[name], { status: 200 });
+  };
+  try {
+    fs.mkdirSync(path.join(dirs.game, 'config'), { recursive: true });
+    fs.writeFileSync(path.join(dirs.game, 'config', 'reimagined-intro.json'), JSON.stringify({ introVolume: 0.4, selectedPack: 'mojang_reimagined' }));
+    const cfg = { manifest: 'https://raw.example/intro-pack/manifest.json' };
+    const r = await intro.prepare(dirs, cfg, 'wylvarion');
+    assert.equal(r.downloaded, true);
+    assert.ok(fs.readFileSync(path.join(dirs.game, 'intros', 'wylvarion-intro.zip')).equals(whole));
+    const modCfg = JSON.parse(fs.readFileSync(path.join(dirs.game, 'config', 'reimagined-intro.json'), 'utf8'));
+    assert.equal(modCfg.selectedPack, 'wylvarion_test');
+    assert.equal(modCfg.introVolume, 0.4);
+    assert.equal(modCfg.enableIntro, true);
+    // beze změny se znovu nestahuje
+    const r2 = await intro.prepare(dirs, cfg, 'wylvarion');
+    assert.equal(r2.downloaded, false);
+    assert.equal(gets, 2);
+    // hráč chce původní intro
+    await intro.prepare(dirs, cfg, 'mojang');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(dirs.game, 'config', 'reimagined-intro.json'), 'utf8')).selectedPack, 'mojang_reimagined');
+    // poškozené stažení se neuloží
+    fs.rmSync(path.join(dirs.root, 'intro-state.json'));
+    parts.part_01 = Buffer.from('rozbite');
+    await assert.rejects(intro.prepare(dirs, cfg, 'wylvarion'), /nestáhlo celé/);
+  } finally {
+    global.fetch = realFetch;
+  }
+});
+
+test('options.txt: změní jen zadané volby', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const { setOptions } = require('../src/main/core/options');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wylopt-'));
+  fs.writeFileSync(path.join(dir, 'options.txt'), 'version:4000\r\nlang:en_us\r\nfov:0.5\r\n');
+  assert.equal(setOptions(dir, { lang: 'cs_cz', fullscreen: 'true' }), true);
+  assert.equal(fs.readFileSync(path.join(dir, 'options.txt'), 'utf8'), 'version:4000\nlang:cs_cz\nfov:0.5\nfullscreen:true\n');
+  assert.equal(setOptions(dir, { lang: 'cs_cz' }), false);
+});
+
+test('překlady: všechny jazyky mají stejné klíče a HTML používá jen existující', () => {
+  const fs = require('fs');
+  const { I18N } = require('../src/renderer/i18n.js');
+  const cs = Object.keys(I18N.cs).sort();
+  for (const l of ['sk', 'en']) assert.deepEqual(Object.keys(I18N[l]).sort(), cs, l);
+  const html = fs.readFileSync(path.join(__dirname, '../src/renderer/index.html'), 'utf8');
+  const js = fs.readFileSync(path.join(__dirname, '../src/renderer/app.js'), 'utf8');
+  const used = [...html.matchAll(/data-i18n(?:-html|-ph|-title)?="([^"]+)"/g), ...js.matchAll(/\bt\('([a-z][\w.]+)'/g)].map((m) => m[1]);
+  const missing = [...new Set(used)].filter((k) => !k.endsWith('.') && !(k in I18N.cs));
+  assert.deepEqual(missing, []);
+});

@@ -27,6 +27,11 @@ $config = [
     // Odkazy v boční liště launcheru.
     'links' => [
         'discord' => 'https://discord.gg/Q7PUz7ARsS',
+        'rules' => 'https://wylvarion.cz/#rules',
+    ],
+    // Intro Wylvarionu pro mod Reimagined Intro (balíček je na GitHubu ve větvi intro-pack).
+    'intro' => [
+        'manifest' => 'https://raw.githubusercontent.com/Azzannoth/wylvarion-launcher/intro-pack/manifest.json',
     ],
     // Resource pack serveru – launcher ho stáhne předem, aby se při připojení nestahoval.
     // Musí to být stejná adresa jako v ItemsAdder/config.yml (pack_hosting.external_host.url).

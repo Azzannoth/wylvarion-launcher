@@ -17,22 +17,23 @@
       <span class="brand-tag">Launcher</span>
     </div>
     <div class="win-actions">
-      <button class="win-btn" data-win="min" title="Minimalizovat">&#x2013;</button>
-      <button class="win-btn" data-win="max" title="Maximalizovat">&#x25A1;</button>
-      <button class="win-btn close" data-win="close" title="Zavřít">&#x2715;</button>
+      <button class="win-btn" data-win="min" data-i18n-title="win.min">&#x2013;</button>
+      <button class="win-btn" data-win="max" data-i18n-title="win.max">&#x25A1;</button>
+      <button class="win-btn close" data-win="close" data-i18n-title="win.close">&#x2715;</button>
     </div>
   </header>
 
   <div class="layout">
     <nav class="sidebar">
-      <button class="nav active" data-page="home"><span class="ico">⌂</span>Domů</button>
-      <button class="nav" data-page="skins"><span class="ico">👕</span>Skin</button>
-      <button class="nav" data-page="mods"><span class="ico">⚙</span>Mody</button>
-      <button class="nav" data-page="settings"><span class="ico">☰</span>Nastavení</button>
+      <button class="nav active" data-page="home"><span class="ico">⌂</span><span data-i18n="nav.home">Domů</span></button>
+      <button class="nav" data-page="server"><span class="ico">🐉</span><span data-i18n="nav.server">Server</span></button>
+      <button class="nav" data-page="skins"><span class="ico">👕</span><span data-i18n="nav.skin">Skin</span></button>
+      <button class="nav" data-page="mods"><span class="ico">⚙</span><span data-i18n="nav.mods">Mody</span></button>
+      <button class="nav" data-page="settings"><span class="ico">☰</span><span data-i18n="nav.settings">Nastavení</span></button>
       <div class="nav-sep"></div>
-      <button class="nav link" data-link="web"><span class="ico">🌐</span>Web</button>
-      <button class="nav link" data-link="shop"><span class="ico">💎</span>Obchod</button>
-      <button class="nav link" data-link="discord"><span class="ico">💬</span>Discord</button>
+      <button class="nav link" data-link="web"><span class="ico">🌐</span><span data-i18n="nav.web">Web</span></button>
+      <button class="nav link" data-link="shop"><span class="ico">💎</span><span data-i18n="nav.shop">Obchod</span></button>
+      <button class="nav link" data-link="discord"><span class="ico">💬</span><span data-i18n="nav.discord">Discord</span></button>
       <div class="grow"></div>
       <div class="account" id="account"></div>
     </nav>
@@ -42,18 +43,18 @@
       <section class="page active" id="page-home">
         <div class="home-grid">
           <div class="home-main">
-            <div class="server-card">
+            <div class="server-card" id="serverCard" title="Server">
               <div class="status-dot" id="statusDot"></div>
               <div>
                 <div class="server-name" id="serverName">play.wylvarion.cz</div>
-                <div class="server-sub" id="serverSub">Zjišťuji stav serveru…</div>
+                <div class="server-sub" id="serverSub" data-i18n="home.checking">Zjišťuji stav serveru…</div>
               </div>
             </div>
-            <h1 class="hero-title">Vítej na <span>Wylvarionu</span></h1>
-            <p class="hero-sub">Klikni na <b>Hrát</b> – launcher sám stáhne hru, Javu a mody. Wylvarion najdeš nahoře v seznamu serverů (nebo si v Nastavení zapni přímé připojení).</p>
+            <h1 class="hero-title" data-i18n-html="home.title">Vítej na <span>Wylvarionu</span></h1>
+            <p class="hero-sub" data-i18n-html="home.sub"></p>
 
             <div class="news">
-              <div class="news-head">Novinky</div>
+              <div class="news-head" data-i18n="home.news">Novinky</div>
               <div class="news-list" id="news"></div>
             </div>
           </div>
@@ -66,92 +67,138 @@
 
         <div class="playbar">
           <div class="progress-wrap">
-            <div class="progress-text" id="progressText">Připraveno ke hře</div>
+            <div class="progress-text" id="progressText" data-i18n="home.ready">Připraveno ke hře</div>
             <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
           </div>
-          <label class="quick" id="quickIntroBox" title="Animované intro při spuštění hry. Na slabších počítačích ho vypni, bere hodně paměti.">
-            <span>Intro</span>
+          <label class="quick" id="quickIntroBox" data-i18n-title="home.introTip">
+            <span data-i18n="home.intro">Intro</span>
             <span class="switch"><input type="checkbox" id="quickIntro"><span></span></span>
           </label>
-          <label class="quick" title="Shadery jdou přepnout i ve hře klávesou K">
-            <span>Shadery</span>
+          <label class="quick" data-i18n-title="home.shadersTip">
+            <span data-i18n="home.shaders">Shadery</span>
             <span class="switch"><input type="checkbox" id="quickShaders"><span></span></span>
           </label>
-          <button class="play" id="playBtn"><span>HRÁT</span></button>
+          <button class="play" id="playBtn"><span data-i18n="play.play">HRÁT</span></button>
         </div>
+      </section>
+
+      <!-- SERVER -->
+      <section class="page" id="page-server">
+        <h2 data-i18n="server.title">Server</h2>
+        <div class="srv-hero">
+          <img class="srv-logo" src="assets/logo.png" alt="">
+          <div class="srv-main">
+            <div class="srv-state"><span class="status-dot" id="srvDot"></span><span id="srvState"></span></div>
+            <div class="srv-motd" id="srvMotd"></div>
+            <div class="srv-ip">
+              <span class="muted small" data-i18n="server.ip">Adresa serveru</span>
+              <code id="srvIp">play.wylvarion.cz</code>
+              <button class="btn small ghost" id="srvCopy" data-i18n="server.copy">Kopírovat</button>
+            </div>
+          </div>
+          <div class="srv-stats">
+            <div class="stat"><div class="v" id="srvPlayers">–</div><div class="k" data-i18n="server.players">Hráči</div></div>
+            <div class="stat"><div class="v" id="srvPing">–</div><div class="k" data-i18n="server.ping">Odezva</div></div>
+            <div class="stat"><div class="v" id="srvVersion">–</div><div class="k" data-i18n="server.version">Verze</div></div>
+          </div>
+        </div>
+
+        <h3 data-i18n="server.online">Kdo hraje</h3>
+        <div class="srv-players" id="srvList"></div>
+
+        <h3 data-i18n="server.links">Rychlé odkazy</h3>
+        <div class="srv-links" id="srvLinks"></div>
+
+        <h3 data-i18n="server.vote">Hlasuj pro server</h3>
+        <p class="muted" data-i18n="server.voteDesc"></p>
+        <div class="srv-votes" id="srvVotes"></div>
       </section>
 
       <!-- SKIN -->
       <section class="page" id="page-skins">
-        <h2>Skin a plášť</h2>
-        <p class="muted">Změna platí pro celý tvůj Minecraft účet, uvidí ji všichni na všech serverech. Na Wylvarionu se nový skin projeví po dalším připojení.</p>
+        <h2 data-i18n="skin.title">Skin a plášť</h2>
+        <p class="muted" data-i18n="skin.intro"></p>
         <div class="skins-grid">
           <div class="skins-preview">
             <canvas id="skinEdit" width="240" height="320"></canvas>
             <div class="variant" id="variantBox">
-              <button class="vbtn active" data-variant="classic">Klasická postava</button>
-              <button class="vbtn" data-variant="slim">Tenká (Alex)</button>
+              <button class="vbtn active" data-variant="classic" data-i18n="skin.classic">Klasická postava</button>
+              <button class="vbtn" data-variant="slim" data-i18n="skin.slim">Tenká (Alex)</button>
             </div>
-            <div class="skins-state" id="skinsState">Načítám skin…</div>
+            <div class="skins-state" id="skinsState" data-i18n="skin.loading">Načítám skin…</div>
           </div>
           <div class="skins-side">
             <div class="skins-card">
-              <div class="s-title">Nový skin</div>
-              <p class="muted small">PNG obrázek 64×64 pixelů, třeba z NameMC nebo Skindexu.</p>
+              <div class="s-title" data-i18n="skin.new">Nový skin</div>
+              <p class="muted small" data-i18n="skin.newDesc"></p>
               <div class="row">
-                <button class="btn ghost" id="skinPick">Vybrat soubor…</button>
-                <input class="input" id="skinTitle" maxlength="32" placeholder="Název (pro uložené skiny)">
+                <button class="btn ghost" id="skinPick" data-i18n="skin.pick">Vybrat soubor…</button>
+                <input class="input" id="skinTitle" maxlength="32" data-i18n-ph="skin.name">
               </div>
-              <label class="check"><input type="checkbox" id="skinSave" checked> Uložit do mých skinů</label>
+              <label class="check"><input type="checkbox" id="skinSave" checked> <span data-i18n="skin.save">Uložit do mých skinů</span></label>
               <div class="row" style="margin-top:12px">
-                <button class="btn" id="skinApply" disabled>Nastavit skin</button>
-                <button class="btn ghost" id="skinReset" hidden>Zrušit</button>
+                <button class="btn" id="skinApply" disabled data-i18n="skin.apply">Nastavit skin</button>
+                <button class="btn ghost" id="skinReset" hidden data-i18n="skin.cancel">Zrušit</button>
               </div>
             </div>
 
             <div class="skins-card">
-              <div class="s-title">Plášť</div>
+              <div class="s-title" data-i18n="skin.cape">Plášť</div>
               <div class="capes" id="capeList"></div>
             </div>
           </div>
         </div>
 
-        <h3>Moje skiny</h3>
-        <p class="muted">Kliknutím na skin ho nastavíš. Skiny jsou uložené jen v tomhle počítači.
-          <button class="link-btn" id="skinSaveCurrent">Uložit aktuální skin</button></p>
+        <h3 data-i18n="skin.mine">Moje skiny</h3>
+        <p class="muted"><span data-i18n="skin.mineDesc"></span>
+          <button class="link-btn" id="skinSaveCurrent" data-i18n="skin.saveCurrent">Uložit aktuální skin</button></p>
         <div class="skin-lib" id="skinLib"></div>
       </section>
 
       <!-- MODY -->
       <section class="page" id="page-mods">
-        <h2>Mody</h2>
-        <p class="muted">Sada Wylvarion se stahuje a aktualizuje automaticky. Povinné mody nejde vypnout, ostatní si zapni podle sebe.</p>
+        <h2 data-i18n="mods.title">Mody</h2>
+        <p class="muted" data-i18n="mods.intro"></p>
         <div class="mod-list" id="modList"></div>
 
-        <h3>Vlastní mody</h3>
-        <p class="muted">Vlastní <code>.jar</code> soubory launcher nikdy nesmaže. Musí být pro Fabric a verzi hry <span class="mcver"></span>.</p>
+        <h3 data-i18n="mods.custom">Vlastní mody</h3>
+        <p class="muted" data-i18n-html="mods.customDesc"></p>
         <div class="row">
-          <button class="btn" id="addJar">Přidat .jar soubor</button>
-          <button class="btn ghost" data-open="mods">Otevřít složku mods</button>
+          <button class="btn" id="addJar" data-i18n="mods.addJar">Přidat .jar soubor</button>
+          <button class="btn ghost" data-open="mods" data-i18n="mods.openFolder">Otevřít složku mods</button>
         </div>
         <div class="custom-list" id="customList"></div>
 
-        <h3>Hledat na Modrinthu</h3>
+        <h3 data-i18n="mods.search">Hledat na Modrinthu</h3>
         <div class="row">
-          <input class="input" id="modSearch" placeholder="Např. shulker box tooltip, journeymap…">
-          <button class="btn" id="modSearchBtn">Hledat</button>
+          <input class="input" id="modSearch" data-i18n-ph="mods.searchPh">
+          <button class="btn" id="modSearchBtn" data-i18n="mods.searchBtn">Hledat</button>
         </div>
         <div class="search-list" id="searchList"></div>
       </section>
 
       <!-- NASTAVENÍ -->
       <section class="page" id="page-settings">
-        <h2>Nastavení</h2>
+        <h2 data-i18n="set.title">Nastavení</h2>
 
         <div class="setting">
           <div>
-            <div class="s-title">Paměť pro hru (RAM)</div>
-            <div class="s-desc">Doporučeno: <b id="ramRec"></b>. Tvůj počítač má <span id="ramTotal"></span>.</div>
+            <div class="s-title" data-i18n="set.lang">Jazyk</div>
+            <div class="s-desc" data-i18n="set.langDesc"></div>
+          </div>
+          <div class="s-control">
+            <div class="langs" id="langBox">
+              <button class="lang" data-lang="cs"><span class="flag">🇨🇿</span>Čeština</button>
+              <button class="lang" data-lang="sk"><span class="flag">🇸🇰</span>Slovenčina</button>
+              <button class="lang" data-lang="en"><span class="flag">🇬🇧</span>English</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting">
+          <div>
+            <div class="s-title" data-i18n="set.ram">Paměť pro hru (RAM)</div>
+            <div class="s-desc" data-i18n-html="set.ramDesc"></div>
           </div>
           <div class="s-control">
             <input type="range" id="ram" min="2048" step="512">
@@ -161,34 +208,47 @@
 
         <div class="setting">
           <div>
-            <div class="s-title">Shadery</div>
-            <div class="s-desc">Automaticky podle grafiky (tvoje: <b id="gpuTier"></b>). Shadery jdou kdykoli vypnout i ve hře (klávesa K).</div>
+            <div class="s-title" data-i18n="set.shaders">Shadery</div>
+            <div class="s-desc" data-i18n-html="set.shadersDesc"></div>
           </div>
           <div class="s-control">
             <select class="input" id="shader">
-              <option value="auto">Automaticky</option>
-              <option value="off">Vypnuto</option>
-              <option value="low">Slabší PC a notebooky</option>
-              <option value="medium">Střední výkon</option>
-              <option value="high">Výkonná grafika</option>
+              <option value="auto" data-i18n="set.sh.auto">Automaticky</option>
+              <option value="off" data-i18n="set.sh.off">Vypnuto</option>
+              <option value="low" data-i18n="set.sh.low">Slabší PC a notebooky</option>
+              <option value="medium" data-i18n="set.sh.medium">Střední výkon</option>
+              <option value="high" data-i18n="set.sh.high">Výkonná grafika</option>
             </select>
           </div>
         </div>
 
         <div class="setting" id="introSetting">
           <div>
-            <div class="s-title">Animované intro při spuštění</div>
-            <div class="s-desc">Reimagined Intro. Při načítání si vezme dost paměti a na slabších počítačích může hru shodit. Na slabších počítačích je proto vypnuté samo.</div>
+            <div class="s-title" data-i18n="set.intro">Animované intro při spuštění</div>
+            <div class="s-desc" data-i18n="set.introDesc"></div>
           </div>
           <div class="s-control">
             <label class="switch"><input type="checkbox" id="introOn"><span></span></label>
           </div>
         </div>
 
+        <div class="setting" id="introPackSetting">
+          <div>
+            <div class="s-title" data-i18n="set.introPack">Které intro</div>
+            <div class="s-desc" data-i18n="set.introPackDesc"></div>
+          </div>
+          <div class="s-control">
+            <select class="input" id="introPack">
+              <option value="wylvarion" data-i18n="set.ip.wylvarion">Wylvarion</option>
+              <option value="mojang" data-i18n="set.ip.mojang">Mojang</option>
+            </select>
+          </div>
+        </div>
+
         <div class="setting">
           <div>
-            <div class="s-title">Připojit rovnou na server</div>
-            <div class="s-desc">Zapnuto: hra přeskočí hlavní menu i intro a připojí tě hned na Wylvarion. Vypnuto: otevře se hlavní menu (hra pro jednoho hráče, více hráčů, nastavení) a Wylvarion najdeš nahoře v seznamu serverů.</div>
+            <div class="s-title" data-i18n="set.autoJoin">Připojit rovnou na server</div>
+            <div class="s-desc" data-i18n="set.autoJoinDesc"></div>
           </div>
           <div class="s-control">
             <label class="switch"><input type="checkbox" id="autoJoin"><span></span></label>
@@ -197,41 +257,68 @@
 
         <div class="setting">
           <div>
-            <div class="s-title">Po spuštění hry</div>
-            <div class="s-desc">Co má launcher udělat, když se hra spustí.</div>
+            <div class="s-title" data-i18n="set.window">Okno hry</div>
+            <div class="s-desc" data-i18n="set.windowDesc"></div>
+          </div>
+          <div class="s-control">
+            <select class="input" id="resolution">
+              <option value="" data-i18n="set.res.auto">Výchozí velikost</option>
+              <option value="1280x720">1280 × 720</option>
+              <option value="1600x900">1600 × 900</option>
+              <option value="1920x1080">1920 × 1080</option>
+              <option value="2560x1440">2560 × 1440</option>
+            </select>
+            <label class="check"><input type="checkbox" id="fullscreen"> <span data-i18n="set.fullscreen">Celá obrazovka</span></label>
+          </div>
+        </div>
+
+        <div class="setting">
+          <div>
+            <div class="s-title" data-i18n="set.after">Po spuštění hry</div>
+            <div class="s-desc" data-i18n="set.afterDesc"></div>
           </div>
           <div class="s-control">
             <select class="input" id="afterLaunch">
-              <option value="hide">Skrýt a po hře znovu otevřít</option>
-              <option value="keep">Nechat otevřený</option>
-              <option value="close">Zavřít</option>
+              <option value="hide" data-i18n="set.after.hide">Skrýt a po hře znovu otevřít</option>
+              <option value="keep" data-i18n="set.after.keep">Nechat otevřený</option>
+              <option value="close" data-i18n="set.after.close">Zavřít</option>
             </select>
           </div>
         </div>
 
         <div class="setting">
           <div>
-            <div class="s-title">Složka hry</div>
+            <div class="s-title" data-i18n="set.root">Složka hry</div>
             <div class="s-desc" id="rootPath"></div>
           </div>
           <div class="s-control">
-            <button class="btn ghost" id="chooseRoot">Změnit</button>
-            <button class="btn ghost" data-open="root">Otevřít</button>
+            <button class="btn ghost" id="chooseRoot" data-i18n="set.change">Změnit</button>
+            <button class="btn ghost" data-open="root" data-i18n="set.open">Otevřít</button>
           </div>
         </div>
 
         <div class="setting">
           <div>
-            <div class="s-title">Složky a logy</div>
-            <div class="s-desc">Když se hra nespustí, pošli nám soubor <code>launcher-last.log</code> ze složky logs.</div>
+            <div class="s-title" data-i18n="set.repair">Opravit hru</div>
+            <div class="s-desc" data-i18n="set.repairDesc"></div>
           </div>
           <div class="s-control">
-            <button class="btn ghost" data-open="screenshots">Screenshoty</button>
-            <button class="btn ghost" data-open="logs">Logy</button>
+            <button class="btn ghost" id="repairBtn" data-i18n="set.repairBtn">Opravit při dalším spuštění</button>
           </div>
         </div>
 
-        <div class="about">Wylvarion Launcher <span id="appVersion"></span> · Minecraft <span class="mcver"></span> + Fabric</div>
+        <div class="setting">
+          <div>
+            <div class="s-title" data-i18n="set.logs">Složky a logy</div>
+            <div class="s-desc" data-i18n-html="set.logsDesc"></div>
+          </div>
+          <div class="s-control">
+            <button class="btn ghost" data-open="screenshots" data-i18n="set.screenshots">Screenshoty</button>
+            <button class="btn ghost" data-open="logs" data-i18n="set.logsBtn">Logy</button>
+          </div>
+        </div>
+
+        <div class="about" id="about"></div>
       </section>
     </main>
   </div>
@@ -240,9 +327,9 @@
   <div class="overlay" id="loginOverlay" hidden>
     <div class="modal">
       <img class="modal-logo" src="assets/logo.png" alt="">
-      <h2>Přihlášení</h2>
-      <p>Přihlas se svým Microsoft účtem, na kterém máš koupený Minecraft: Java Edition.</p>
-      <button class="btn ms" id="loginBtn"><span class="ms-logo"><i></i><i></i><i></i><i></i></span>Přihlásit se přes Microsoft</button>
+      <h2 data-i18n="login.title">Přihlášení</h2>
+      <p data-i18n="login.text"></p>
+      <button class="btn ms" id="loginBtn"><span class="ms-logo"><i></i><i></i><i></i><i></i></span><span data-i18n="login.btn">Přihlásit se přes Microsoft</span></button>
       <p class="error" id="loginError"></p>
       <p class="muted small" id="loginInfo"></p>
     </div>
@@ -251,12 +338,13 @@
   <!-- Aktualizace -->
   <div class="update-bar" id="updateBar" hidden>
     <span id="updateText"></span>
-    <button class="btn small" id="updateBtn" hidden>Restartovat a aktualizovat</button>
+    <button class="btn small" id="updateBtn" hidden data-i18n="upd.restart">Restartovat a aktualizovat</button>
   </div>
 
   <div class="toasts" id="toasts"></div>
 
   <script src="vendor/skinview3d.bundle.js"></script>
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
