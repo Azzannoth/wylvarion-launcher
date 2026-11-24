@@ -69,7 +69,11 @@ async function loadConfig() {
     config = {
       ...local,
       ...remote,
-      mods: Array.isArray(remote.mods) && remote.mods.length ? remote.mods : local.mods,
+      // Seznam modů z webu; pole, která web neuvádí (např. weakPc), se doplní z vestavěné konfigurace.
+      mods:
+        Array.isArray(remote.mods) && remote.mods.length
+          ? remote.mods.map((m) => ({ ...((local.mods || []).find((l) => l.id === m.id) || {}), ...m }))
+          : local.mods,
       microsoft: { ...local.microsoft, ...(rm.clientId ? { clientId: rm.clientId } : {}), ...(rm.redirectUri ? { redirectUri: rm.redirectUri } : {}) },
       server: { ...local.server, ...(remote.server || {}) },
       links: { ...local.links, ...(remote.links || {}) },
