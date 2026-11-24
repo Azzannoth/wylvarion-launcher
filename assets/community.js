@@ -568,8 +568,12 @@
   }
   document.querySelectorAll('#navLinks [data-tab-link]').forEach((el) => el.addEventListener('click', () => setTimeout(() => onPanel(el.dataset.tabLink), 0)));
 
+  // app.js při startu přepíše adresu na #home – původní odkaz si vezmeme z jeho startHash
+  const START_HASH = (typeof startHash !== 'undefined' && startHash) || location.hash;
+  let routed = false;
   function route() {
-    const h = decodeURIComponent(location.hash.slice(1));
+    const h = decodeURIComponent((routed ? location.hash : START_HASH).slice(1));
+    routed = true;
     const [panel, sub] = [h.split('/')[0].split('?')[0], h.split('/').slice(1).join('/')];
     if (panel === 'hraci' && sub) { showPanel('hraci'); openProfile(sub); return; }
     if (panel === 'novinky' && sub) { showPanel('novinky'); nwOpen(sub); return; }
