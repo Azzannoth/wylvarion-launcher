@@ -24,33 +24,33 @@ function renderWikiGrid(){
     const cats = WIKI_CATS[w.id] || ['Hraní','Informace'];
     const words = wikiText(w.id).split(/\s+/).filter(Boolean).length;
     const min = Math.max(1, Math.round(words / 200));
-    return `<button type="button" class="wk-card" data-wiki-open="${w.id}">
-      <div class="wk-tags">${cats.map(c => `<span class="wk-tag">${WIKI_CAT_IC[c] || ''} ${c}</span>`).join('')}</div>
-      <h3><span class="wk-ic">${wikiIcon(w.id, w.icon)}</span>${w.title}</h3>
+    return `<button type="button" class="wq-card" data-wiki-open="${w.id}">
+      <div class="wq-tags">${cats.map(c => `<span class="wq-tag">${WIKI_CAT_IC[c] || ''} ${c}</span>`).join('')}</div>
+      <h3><span class="wq-ic">${wikiIcon(w.id, w.icon)}</span>${w.title}</h3>
       <p>${w.teaser}</p>
-      <div class="wk-foot"><span>${min} min čtení</span><span class="wk-arrow">→</span></div>
+      <div class="wq-foot"><span>${min} min čtení</span><span class="wq-arrow">→</span></div>
     </button>`;
-  }).join('') : `<div class="wk-empty">Nic jsme nenašli. Zkus jiné slovo nebo se zeptej na Discordu.</div>`;
+  }).join('') : `<div class="wq-empty">Nic jsme nenašli. Zkus jiné slovo nebo se zeptej na Discordu.</div>`;
   mount.querySelectorAll('[data-wiki-open]').forEach(b => b.addEventListener('click', () => openWikiArticle(b.dataset.wikiOpen)));
   if (typeof hydrateMcIcons === 'function') hydrateMcIcons(mount);
 }
 function buildWiki(){
   const mount = document.getElementById('wikiGridMount');
-  mount.className = 'wk-grid';
-  if (!document.getElementById('wkBar')){
+  mount.className = 'wq-grid';
+  if (!document.getElementById('wqBar')){
     const cats = ['Vše', 'Začínáme', 'Ekonomika', 'Hraní'];
     const bar = document.createElement('div');
-    bar.className = 'wk-bar'; bar.id = 'wkBar';
+    bar.className = 'wq-bar'; bar.id = 'wqBar';
     bar.innerHTML = `
-      <label class="wb-search wk-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="wkQ" type="search" placeholder="Hledat ve wiki…" aria-label="Hledat ve wiki"></label>
-      <div class="wk-chips">${cats.map(c => `<button type="button" class="wk-chip${c === 'Vše' ? ' is-active' : ''}" data-wk-cat="${c}">${c === 'Vše' ? '' : (WIKI_CAT_IC[c] + ' ')}${c}</button>`).join('')}</div>`;
+      <label class="wb-search wq-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="wqQ" type="search" placeholder="Hledat ve wiki…" aria-label="Hledat ve wiki"></label>
+      <div class="wq-chips">${cats.map(c => `<button type="button" class="wq-chip${c === 'Vše' ? ' is-active' : ''}" data-wq-cat="${c}">${c === 'Vše' ? '' : (WIKI_CAT_IC[c] + ' ')}${c}</button>`).join('')}</div>`;
     mount.parentNode.insertBefore(bar, mount);
-    bar.querySelector('#wkQ').addEventListener('input', e => { wikiFilter.q = e.target.value; renderWikiGrid(); });
+    bar.querySelector('#wqQ').addEventListener('input', e => { wikiFilter.q = e.target.value; renderWikiGrid(); });
     bar.addEventListener('click', e => {
-      const b = e.target.closest('[data-wk-cat]'); if (!b) return;
-      wikiFilter.cat = b.dataset.wkCat;
-      bar.querySelectorAll('[data-wk-cat]').forEach(x => x.classList.toggle('is-active', x === b));
+      const b = e.target.closest('[data-wq-cat]'); if (!b) return;
+      wikiFilter.cat = b.dataset.wqCat;
+      bar.querySelectorAll('[data-wq-cat]').forEach(x => x.classList.toggle('is-active', x === b));
       renderWikiGrid();
     });
   }
