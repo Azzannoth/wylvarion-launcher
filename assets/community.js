@@ -400,17 +400,28 @@
     const box = $('#inMount');
     if (!box || typeof INFLUENCERS === 'undefined') return;
     const I = INFLUENCERS;
+    const li = (arr) => arr.map((r) => `<li>${esc(r)}</li>`).join('');
     box.innerHTML = `
-      <div class="in-hero"><div><b>Jak zažádat o rank tvůrce</b><span>Přihlášku podáš na našem Discordu. Vyber si, co děláš, a podívej se na podmínky.</span></div>
+      ${I.highlight ? `<div class="in-god"><div class="in-god-ic">👑</div><div><b>${esc(I.highlight.title)}</b><span>${esc(I.highlight.text)}</span></div></div>` : ''}
+      <div class="in-hero"><div><b>Jak zažádat o rank tvůrce</b><span>Vyber si, co děláš, splň podmínky a pošli přihlášku na našem Discordu s odkazy na svůj obsah ze serveru.</span></div>
         <a class="wb-btn" href="${esc(I.apply)}" target="_blank" rel="noopener">Přihláška (Discord)</a></div>
+      ${I.common_req ? `<div class="in-common">
+        <div class="in-box"><h4>📋 Podmínky pro všechny tvůrce</h4><ul>${li(I.common_req)}</ul></div>
+        <div class="in-box in-good"><h4>🎁 Co dostane každý tvůrce</h4><ul class="in-perks">${li(I.common_perks || [])}</ul></div></div>` : ''}
       <div class="in-grid">${I.tiers.map((t) => `
         <div class="in-card" style="--c:${t.color}"><div class="in-ic">${t.icon}</div><h3>${esc(t.name)}</h3>
-          <h4>Podmínky</h4><ul>${t.req.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
-          <h4>Co získáš</h4><ul class="in-perks">${t.perks.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></div>`).join('')}</div>
+          <h4>Podmínky navíc</h4><ul>${li(t.req)}</ul>
+          <h4>Co získáš</h4><ul class="in-perks">${t.perks.map((r) => `<li${/GOD VIP/i.test(r) ? ' class="in-vip"' : ''}>${esc(r)}</li>`).join('')}</ul></div>`).join('')}</div>
+      <div class="in-steps"><h3 class="sl-title">Jak to probíhá</h3><ol>
+        <li><b>Natoč obsah</b><span>Reels, klipy, shorts, videa nebo streamy z Wylvarionu.</span></li>
+        <li><b>Pošli přihlášku</b><span>Na Discordu otevři ticket a přidej odkazy na svůj kanál a obsah.</span></li>
+        <li><b>Schválení</b><span>Admin team projde tvůj obsah a ozve se ti obvykle do pár dní.</span></li>
+        <li><b>Rank a GOD VIP</b><span>Dostaneš rank tvůrce a GOD VIP natrvalo, dokud rank máš.</span></li></ol>
+        <p class="cm-note">Když přestaneš tvořit obsah ze serveru (víc než měsíc nic) nebo porušíš pravidla, rank i GOD VIP se odebírají.</p></div>
       <h3 class="sl-title">Naši tvůrci</h3>
       ${I.creators.length ? `<div class="in-creators">${I.creators.map((c) => { const t = I.tiers.find((x) => x.id === c.type) || {}; return `
         <a class="in-creator" href="${esc(c.url || '#')}" target="_blank" rel="noopener" style="--c:${t.color || '#a855f7'}"><img src="https://mc-heads.net/body/${encodeURIComponent(c.nick)}/140" alt="" loading="lazy"><b>${esc(c.nick)}</b><span>${esc(t.name || 'Tvůrce')}</span></a>`; }).join('')}</div>`
-        : '<div class="cm-empty"><b>Zatím tu nikdo není.</b><span>Buď první tvůrce Wylvarionu!</span></div>'}`;
+        : '<div class="cm-empty"><b>Zatím tu nikdo není.</b><span>Buď první tvůrce Wylvarionu a získej GOD VIP natrvalo!</span></div>'}`;
   }
 
   /* =================== ADMIN TEAM: banner + sociální sítě =================== */
