@@ -663,6 +663,7 @@
   const MONTHS = ['leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'];
   let data = null;
   let tab = 'top';
+  let shownCount = 16;
 
   const badge = (id) => {
     const t = data.tiers.find((x) => x.id === id);
@@ -674,15 +675,16 @@
     return `<div class="sl-podium pt-podium">${order.map((i) => { const r = top3[i]; return `
       <button type="button" class="sl-pod p${i + 1}" data-hr="${esc(r.name)}">
         <img src="${body(r.name)}" alt="" loading="lazy">
-        <span class="sl-place">${i + 1}</span><b>${esc(r.name)}</b><small>Utraceno <em>${kc(r.total)}</em></small>
+        <span class="sl-place">${i + 1}</span><b>${esc(r.name)}</b>
         ${r.tier ? badge(r.tier) : ''}
       </button>`; }).join('')}</div>`;
   };
   const rows = (list, from) => `<div class="sl-list">${list.map((r, k) => `
-    <button type="button" class="sl-row" data-hr="${esc(r.name)}"><span class="sl-n">${k + from}</span><img src="${head(r.name)}" alt="" loading="lazy"><b>${esc(r.name)}</b>${r.tier ? badge(r.tier) : ''}<em>${kc(r.total)}</em></button>`).join('')}</div>`;
-  const cards = (list) => `<div class="pt-grid">${list.map((r) => `
-    <button type="button" class="pt-card" data-hr="${esc(r.name)}"><img src="${head(r.name, 64)}" alt="" loading="lazy">
-      <span><b>${esc(r.name)}</b><small>${kc(r.total)} · ${r.purchases}× nákup</small></span></button>`).join('')}</div>`;
+    <button type="button" class="sl-row" data-hr="${esc(r.name)}"><span class="sl-n">${k + from}</span><img src="${head(r.name)}" alt="" loading="lazy"><b>${esc(r.name)}</b>${r.tier ? badge(r.tier) : ''}</button>`).join('')}</div>`;
+  const PT_PAGE = 16;
+  const cards = (list, shown) => `<div class="pt-grid">${list.slice(0, shown).map((r) => `
+    <button type="button" class="pt-card" data-hr="${esc(r.name)}"><b>${esc(r.name)}</b><span class="pt-bust"><img src="${body(r.name, 120)}" alt="" loading="lazy"></span></button>`).join('')}</div>
+    ${list.length > shown ? '<div class="pt-more"><button type="button" class="btn btn-ghost" data-pt-more>Zobrazit více</button></div>' : ''}`;
 
   function renderTab() {
     const box = document.getElementById('ptTab');
@@ -695,8 +697,9 @@
       html = data.month.length ? podium(data.month) + rows(data.month.slice(3), 4) : '';
     } else {
       const t = data.tiers.find((x) => x.id === tab);
-      const list = data.top.filter((r) => r.total >= t.min);
-      html = list.length ? `<p class="pt-lead">Hráči, kteří Wylvarion podpořili celkem částkou <b>${kc(t.min)}</b> a více.</p>${cards(list)}` : '';
+      const order = data.tiers.map((x) => x.id);
+      const list = data.top.filter((r) => r.tier && order.indexOf(r.tier) <= order.indexOf(t.id));
+      html = list.length ? `<h3 class="pt-ttl">${({ patron: 'Patroni', mecenas: 'Mecenáši', legend: 'Legendy' })[t.id] || esc(t.name)} ${kc(t.min)}+</h3>${cards(list, shownCount)}` : '';
     }
     box.innerHTML = html || `<div class="cm-empty"><b>Zatím tu nikdo není.</b><span>Buď první – podpoř server v <a href="#shop" data-tab-link="shop" class="linkish">obchodě</a>.</span></div>`;
   }
@@ -728,7 +731,8 @@
       ${data.recent.length ? `<div class="pt-recent"><h4>Poslední podpora</h4><div class="pt-rlist">${data.recent.map((r) => `
         <button type="button" class="pt-ritem" data-hr="${esc(r.name)}"><img src="${head(r.name, 32)}" alt="" loading="lazy"><b>${esc(r.name)}</b><span>${esc(r.item)}</span><small>${when(r.at)}</small></button>`).join('')}</div></div>` : ''}
       <div class="pt-cta"><a href="#shop" data-tab-link="shop" class="btn btn-primary">Podpořit server v obchodě</a></div>`;
-    box.querySelectorAll('.pt-tab').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.pt; renderTab(); }));
+    box.querySelectorAll('.pt-tab').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.pt; shownCount = PT_PAGE; renderTab(); }));
+    box.addEventListener('click', (e) => { if (e.target.closest('[data-pt-more]')) { shownCount += PT_PAGE; renderTab(); } });
     renderTab();
   }
 

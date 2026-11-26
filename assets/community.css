@@ -341,3 +341,10 @@
   .pt-tab{min-width:0;flex:1 1 30%;padding:8px 10px;font-size:13px;}
   .pt-body{padding:14px;}
 }
+.pt-ttl{margin:0 0 6px;text-align:center;font:800 26px var(--font-body);text-transform:uppercase;background:linear-gradient(90deg,#f0abfc,#c084fc);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.pt-grid .pt-card{flex-direction:column;justify-content:flex-start;gap:10px;padding:14px 12px 0;text-align:center;overflow:hidden;}
+.pt-card .pt-bust{display:block;height:92px;overflow:hidden;}
+.pt-card .pt-bust img{width:auto;height:180px;border-radius:0;image-rendering:pixelated;filter:drop-shadow(0 8px 12px rgba(0,0,0,.55));}
+.pt-card b{font-size:15px;}
+.pt-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));}
+.pt-more{display:flex;justify-content:center;margin-top:6px;}

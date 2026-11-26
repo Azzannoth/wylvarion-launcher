@@ -44,8 +44,8 @@ try {
     foreach ($st->fetchAll() as $r) {
         $t = round((float) $r['total']);
         if ($t <= 0) continue;
-        $top[] = ['name' => (string) $r['nickname'], 'total' => $t, 'purchases' => (int) $r['purchases'],
-            'tier' => pt_tier($t), 'first' => $r['first_at'], 'last' => $r['last_at']];
+        // částky jednotlivců se ven neposílají – jen pořadí a úroveň
+        $top[] = ['name' => (string) $r['nickname'], 'tier' => pt_tier($t)];
     }
 
     $st = $pdo->prepare("SELECT nickname, COUNT(*) AS purchases, $sum AS total FROM orders
@@ -57,7 +57,7 @@ try {
     foreach ($st->fetchAll() as $r) {
         $t = round((float) $r['total']);
         if ($t <= 0) continue;
-        $month[] = ['name' => (string) $r['nickname'], 'total' => $t, 'purchases' => (int) $r['purchases']];
+        $month[] = ['name' => (string) $r['nickname']];
     }
 
     $st = $pdo->prepare("SELECT $sum AS total, COUNT(*) AS n FROM orders WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01 00:00:00')");
