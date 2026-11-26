@@ -311,15 +311,18 @@ async function play() {
     // Resource pack serveru: launcher ho stáhne (jen když se změnil) a zapne ve hře jako
     // normální resource pack. Načte se při startu hry, takže se při připojení nic nestahuje
     // ani nenačítá – pack od serveru hra odmítne (ItemsAdder za to nevyhazuje).
-    let localPack = false;
+    // Pack už launcher neinstaluje jako vlastní resource pack: hra ho přijme od serveru (server tak ví,
+    // kdo ho má načtený – plugin WylPack). Předem ho jen stáhne do mezipaměti hry, aby se při připojení nestahoval.
+    const localPack = false;
     try {
-      const rp = await serverpack.prefetch(d, config.resourcePack, progress);
-      if (rp && rp.master) {
-        serverpack.installLocal(d, rp.master);
-        localPack = true;
-      }
+      await serverpack.prefetch(d, config.resourcePack, progress);
     } catch (e) {
       send('notice', { key: 'notice.pack' });
+    }
+    try {
+      serverpack.uninstallLocal(d);
+    } catch {
+      /* není podstatné */
     }
 
     // Server v seznamu serverů; pack od serveru přijmout jen když ho nemáme nainstalovaný sami (stáhne se sám, bez dotazu).
