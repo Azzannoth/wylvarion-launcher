@@ -114,6 +114,8 @@
       card('🗳️', 'Hlasy', p.votes ? num(p.votes.month) : '0', p.votes ? `tento měsíc · celkem ${num(p.votes.total)}` : 'tento měsíc'),
       card('🎣', 'Chycené ryby', num(s.fish), ''),
       card('🧭', 'Nachozeno', s.km != null ? `${num(s.km, 1)} km` : '–', ''),
+      card('📜', 'Splněné questy', s.quests != null ? num(s.quests) : '–', s.qrank ? `rank ${esc(s.qrank.toUpperCase())}` : ''),
+      card('✦', 'Výpravy Prastarých', s.vyp != null ? num(s.vyp) : '–', (s.quests || 0) >= 1000 ? 'odemčeno' : 'odemkne se po 1000 questech'),
     ].join('') : `<div class="cm-empty small" style="grid-column:1/-1">Statistiky tohoto hráče zatím nemáme.</div>`;
     const badges = p.badges.map((b) => `<div class="pf-badge${b.has ? ' is-on' : ''}" title="${esc(b.desc)}"><span>${b.icon}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join('');
     const got = p.badges.filter((b) => b.has).length;
@@ -182,6 +184,8 @@
     { id: 'kills', label: '⚔️ Zabití hráčů', fmt: (v) => `${num(v)} zabití`, title: 'Nejlepší bojovníci' },
     { id: 'mobs', label: '🐉 Zabití mobů', fmt: (v) => `${num(v)} mobů`, title: 'Největší lovci' },
     { id: 'fish', label: '🎣 Rybaření', fmt: (v) => `${num(v)} ryb`, title: 'Nejlepší rybáři' },
+    { id: 'quests', label: '📜 Questy', fmt: (v) => `${num(v)} questů`, title: 'Nejvíc splněných questů' },
+    { id: 'vyp', label: '✦ Výpravy', fmt: (v) => `${num(v)} výprav`, title: 'Nejvíc splněných Výprav Prastarých' },
   ];
   let slCur = 'play';
   async function slRender() {
@@ -763,4 +767,162 @@
     } else load();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+/* =================== HLAVNÍ STRÁNKA: 3 kroky + odpočty =================== */
+(function () {
+  'use strict';
+  const API = (typeof CONFIG !== 'undefined' && CONFIG.apiBase) || 'api';
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // KOTH: čtvrtek a sobota v 18:00 (Europe/Prague) – podle AxKoth/schedulers.yml
+  const KOTH = [{ day: 4, h: 18 }, { day: 6, h: 18 }];
+
+  /** Datum v pražském čase -> Date (bez knihoven: dopočítá posun). */
+  function pragueDate(y, mo, d, h, mi) {
+    const guess = new Date(Date.UTC(y, mo, d, h, mi));
+    const fmt = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Prague', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const p = Object.fromEntries(fmt.formatToParts(guess).map((x) => [x.type, x.value]));
+    const asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute);
+    return new Date(guess.getTime() - (asUtc - guess.getTime()));
+  }
+  function nextKoth() {
+    const now = new Date();
+    const fmt = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Prague', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
+    let best = null;
+    for (let add = 0; add < 8; add++) {
+      const t = new Date(now.getTime() + add * 86400000);
+      const p = Object.fromEntries(fmt.formatToParts(t).map((x) => [x.type, x.value]));
+      const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(p.weekday);
+      for (const k of KOTH) if (k.day === wd) {
+        const d = pragueDate(+p.year, +p.month - 1, +p.day, k.h, 0);
+        if (d > now && (!best || d < best)) best = d;
+      }
+    }
+    return best;
+  }
+  function left(ms) {
+    if (ms <= 0) return 'právě probíhá';
+    const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+    return (d ? `${d} d ` : '') + `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}`;
+  }
+  const when = (d) => d.toLocaleString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' });
+
+  async function build() {
+    const home = document.getElementById('panel-home');
+    if (!home || document.getElementById('hsStart')) return;
+    const anchor = home.querySelector('#howto') || home.querySelector('.home-section');
+    if (!anchor) return;
+    const discord = (document.querySelector('a[href*="discord.gg"], a[href*="discord.com/invite"]') || {}).href || '#';
+    const sec = document.createElement('div');
+    sec.className = 'wrap home-section hs-wrap';
+    sec.id = 'hsStart';
+    sec.innerHTML = `
+      <div class="hs-steps">
+        <div class="hs-head"><div class="eyebrow">Nový na serveru?</div><h2>Začni ve 3 krocích</h2></div>
+        <ol class="hs-list">
+          <li><span class="hs-n">1</span><div><b>Stáhni Wylvarion Launcher</b><small>Sám nainstaluje hru, mody i resource pack. Zdarma pro Windows, Mac i Linux.</small>
+            <a class="btn btn-primary btn-sm" href="#launcher" data-hs-panel="launcher">Stáhnout launcher</a></div></li>
+          <li><span class="hs-n">2</span><div><b>Připoj se na play.wylvarion.cz</b><small>Z Javy i z Bedrocku (port 35902). Resource pack se stáhne předem v launcheru – bez něj hraješ taky.</small>
+            <button type="button" class="btn btn-ghost btn-sm" data-hs-copy="play.wylvarion.cz">Kopírovat IP</button></div></li>
+          <li><span class="hs-n">3</span><div><b>Přidej se na Discord</b><small>Novinky, eventy, podpora a soutěže. Tam se domluvíš s ostatními hráči.</small>
+            <a class="btn btn-ghost btn-sm" href="${esc(discord)}" target="_blank" rel="noopener">Otevřít Discord</a></div></li>
+        </ol>
+      </div>
+      <div class="hs-timers">
+        <div class="hs-timer" id="hsEvent"><small>Další event</small><b class="hs-title">Načítám…</b><span class="hs-left"></span><em class="hs-when"></em></div>
+        <div class="hs-timer koth"><small>Král kopce (KOTH)</small><b class="hs-title">Bitva o kopec</b><span class="hs-left" id="hsKoth"></span><em class="hs-when" id="hsKothWhen"></em></div>
+      </div>`;
+    anchor.parentNode.insertBefore(sec, anchor);
+    sec.querySelector('[data-hs-panel]')?.addEventListener('click', (e) => { if (typeof showPanel === 'function') { e.preventDefault(); showPanel('launcher'); window.scrollTo({ top: 0, behavior: 'smooth' }); } });
+    sec.querySelector('[data-hs-copy]')?.addEventListener('click', (e) => { navigator.clipboard?.writeText(e.target.dataset.hsCopy); e.target.textContent = 'Zkopírováno ✓'; });
+
+    let ev = null;
+    try {
+      const d = await (await fetch(`${API}/events.php`)).json();
+      const parse = (v) => { const m = String(v || '').match(/^(\d{4})-(\d\d)-(\d\d)[ T](\d\d):(\d\d)/); return m ? pragueDate(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : new Date(NaN); };
+      const list = (d.upcoming || []).map((x) => ({ ...x, at: parse(x.event_date) }))
+        .filter((x) => !isNaN(x.at) && (x.end_date ? parse(x.end_date) : x.at) > new Date())
+        .sort((a, b) => a.at - b.at);
+      ev = list[0] || null;
+    } catch (e) { /* bez eventu */ }
+    const evBox = document.getElementById('hsEvent');
+    if (ev) {
+      evBox.querySelector('.hs-title').textContent = ev.title;
+      evBox.querySelector('.hs-when').textContent = when(ev.at);
+      evBox.style.cursor = 'pointer';
+      evBox.addEventListener('click', () => { if (typeof showPanel === 'function') showPanel('eventy'); });
+    } else {
+      evBox.querySelector('.hs-title').textContent = 'Zatím nic naplánovaného';
+      evBox.querySelector('.hs-left').textContent = 'sleduj Discord';
+    }
+    const k = nextKoth();
+    if (k) document.getElementById('hsKothWhen').textContent = when(k);
+    const tick = () => {
+      if (ev) evBox.querySelector('.hs-left').textContent = left(ev.at - new Date());
+      if (k) document.getElementById('hsKoth').textContent = left(k - new Date());
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
+})();
+
+/* =================== WIKI: nové články =================== */
+(function () {
+  'use strict';
+  if (typeof WIKI_HUB === 'undefined' || typeof WIKI_ARTICLES === 'undefined') return;
+  const add = (id, icon, title, teaser, cats, html) => {
+    if (WIKI_ARTICLES[id]) return;
+    WIKI_ARTICLES[id] = { icon, title, teaser, html };
+    WIKI_HUB.push({ id, icon, title, teaser });
+    if (typeof WIKI_CATS !== 'undefined') WIKI_CATS[id] = cats;
+  };
+  const lv = (n) => `<span style="color:${n <= 3 ? '#4ADE80' : n <= 6 ? '#FACC15' : n <= 8 ? '#F87171' : '#C084FC'}">${'★'.repeat(n)}</span>`;
+
+  add('vypravy-prastarych', 'nether_star', 'Výpravy Prastarých', 'Prémiové časované výpravy po 1000 splněných questech – 100 výprav, úrovně 1–9, nová kola.', ['Hraní', 'Návod'], `
+    <p><strong>Výpravy Prastarých</strong> jsou výzvy pro zkušené hráče. Odemknou se, jakmile splníš <strong>1000 questů</strong> (QuestCore). Otevřeš je příkazem <code>/vypravy</code>.</p>
+    <h3>Jak fungují</h3>
+    <ul>
+      <li>Každý hráč má vlastních <strong>100 náhodných výprav</strong> – lov mobů, rybaření, výroba, tavení, rozmnožování zvířat a očarování.</li>
+      <li>Každá výprava má <strong>úroveň 1–9</strong> a <strong>časový limit</strong>. Čas běží jen když jsi na serveru.</li>
+      <li>Nestihneš to? Výprava se <strong>vynuluje</strong> a můžeš ji zkusit znovu.</li>
+      <li>Najednou můžeš mít rozjetou jen jednu výpravu. Postup a zbývající čas vidíš v <strong>bossbaru</strong> nahoře.</li>
+      <li>Rozjetou výpravu zrušíš v menu <strong>Shift + pravým klikem</strong>.</li>
+    </ul>
+    <h3>Úrovně a odměny</h3>
+    <table class="wiki-table"><thead><tr><th>Úroveň</th><th>Časový limit</th><th>Odměna</th></tr></thead><tbody>
+      <tr><td>${lv(1)} 1</td><td>32 min</td><td>5 gemů + 250 $</td></tr>
+      <tr><td>${lv(3)} 3</td><td>56 min</td><td>6 gemů + 750 $</td></tr>
+      <tr><td>${lv(5)} 5</td><td>1 h 20 min</td><td>8 gemů + 1 250 $</td></tr>
+      <tr><td>${lv(7)} 7</td><td>1 h 44 min</td><td>9 gemů + 1 750 $</td></tr>
+      <tr><td>${lv(9)} 9</td><td>2 h 8 min</td><td>10 gemů + 2 250 $</td></tr>
+    </tbody></table>
+    <h3>Nové kolo</h3>
+    <p>Když dokončíš všech 100 výprav, dostaneš <strong>+100 gemů</strong> a začne <strong>nové kolo</strong> se 100 novými výpravami. Kola se počítají a hráči s nejvíc splněnými výpravami jsou v <a href="#slava">Síni slávy</a>.</p>
+    <h3>Co se nepočítá</h3>
+    <ul><li>Moby ze spawnerů (farmy).</li><li>Těžba a sklizeň – ve výpravách nejsou vůbec.</li></ul>`);
+
+  add('kaceni-stromu', 'iron_axe', 'Kácení stromů', 'Se shiftem pokácíš sekerou celý strom najednou. Domy ze dřeva zůstanou stát.', ['Hraní', 'Návod'], `
+    <p>Drž <strong>Shift</strong> a sekni sekerou do kmene – pokácíš <strong>celý strom</strong> najednou. Bez shiftu sekáš normálně po jednom bloku.</p>
+    <ul>
+      <li>Kácí se jen <strong>přirozené stromy</strong>. Dřevo, které položí hráč, se celé nikdy nepokácí – tvůj dům je v bezpečí.</li>
+      <li>Kmeny padají postupně odspodu, pařez pod místem seknutí zůstane.</li>
+      <li>Po pokácení se sama <strong>zasadí sazenice</strong>.</li>
+      <li>Sekera se opotřebí za každý kmen (Unbreaking i Fortune platí). Když je skoro zničená, kácení se zastaví.</li>
+      <li>Na cizím pozemku kácet nejde – ochrany Residence a WorldGuard platí.</li>
+      <li>Kácení celých stromů si vypneš/zapneš příkazem <code>/drevorubec</code>.</li>
+    </ul>
+    <p>Funguje na všechny druhy stromů včetně netherových (karmínové a zkroucené houby).</p>`);
+
+  add('mounty-peti-nabidka', 'saddle', 'Nabídka mountů a petů', 'Co si můžeš koupit: mounti za gemy, peti za peníze a skiny mountů.', ['Ekonomika', 'Informace'], `
+    <p>Mounty a pety koupíš v obchodě na serveru (gemshop a petshop). Koupený mazlíček se ti objeví v <code>/mcpets</code>.</p>
+    <h3>Mounti – 2 500 gemů</h3>
+    <p>Šavlozubý tygr, Vodní ještěr, Bojová panda, Sculkový drak, Jedovatá mantikora, Vlčí jestřáb, Lesní kanec, Zelená wyverna, Obří žába, Arkánní golem a Drako – ohnivý drak.</p>
+    <h3>Peti – 30 000 $</h3>
+    <p>Ohnivá kočka, Rychlý rex, Magnetický robot, Léčivá květina a Mrazivá koza.</p>
+    <h3>Skiny mountů – 250 gemů</h3>
+    <p>Jiné barvy a vzhledy pro mounty, které už vlastníš.</p>
+    <h3>Levely</h3>
+    <p>Noví peti a mounti mají <strong>levely 1–200</strong>. Zkušenosti sbírají ježděním a bojem – s každým levelem mají víc života, regenerace a síly. Každých 25 levelů změní barvu.</p>
+`);
 })();

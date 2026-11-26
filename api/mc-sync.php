@@ -27,10 +27,11 @@ if ($action === 'stats') {
             $name = preg_replace('/[^A-Za-z0-9_.]/', '', (string)($p['name'] ?? ''));
             if ($uuid === '' || $name === '') continue;
             $row = ['uuid' => $uuid, 'name' => $name];
-            foreach (['first', 'last', 'play', 'kills', 'deaths', 'mobs', 'fish', 'walk'] as $k) {
+            foreach (['first', 'last', 'play', 'kills', 'deaths', 'mobs', 'fish', 'walk', 'quests', 'vyp'] as $k) {
                 if (isset($p[$k]) && is_numeric($p[$k]) && $p[$k] >= 0) $row[$k] = (int)$p[$k];
             }
             if (isset($p['money']) && is_numeric($p['money'])) $row['money'] = round((float)$p['money'], 2);
+            if (isset($p['qrank']) && is_string($p['qrank']) && preg_match('/^[a-z_]{2,20}$/', $p['qrank'])) $row['qrank'] = $p['qrank'];
             $d[$uuid] = $row + ($d[$uuid] ?? []);
         }
     });

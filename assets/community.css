@@ -348,3 +348,24 @@
 .pt-card b{font-size:15px;}
 .pt-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));}
 .pt-more{display:flex;justify-content:center;margin-top:6px;}
+
+/* ===================== Hlavní stránka: 3 kroky + odpočty ===================== */
+.hs-wrap{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;align-items:stretch;}
+.hs-steps,.hs-timer{padding:22px 24px;border-radius:22px;background:linear-gradient(180deg,var(--stone-2),var(--stone));border:1px solid var(--line);}
+.hs-head h2{margin:6px 0 14px;font-size:clamp(22px,2.6vw,28px);}
+.hs-list{list-style:none;margin:0;padding:0;display:grid;gap:12px;}
+.hs-list li{display:flex;gap:14px;align-items:flex-start;}
+.hs-list li>div{display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
+.hs-list b{color:#fff;font-size:16px;}
+.hs-list small{color:var(--parchment-dim);font-weight:600;font-size:13.5px;line-height:1.45;margin-bottom:6px;}
+.hs-n{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font:800 16px var(--font-body);color:#fff;background:linear-gradient(135deg,#5BC8FF,#6B38DD);box-shadow:0 6px 16px -6px rgba(107,56,221,.7);}
+.hs-timers{display:grid;gap:18px;}
+.hs-timer{display:flex;flex-direction:column;gap:4px;justify-content:center;position:relative;overflow:hidden;}
+.hs-timer::after{content:"";position:absolute;inset:auto -30px -40px auto;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(192,132,252,.25),transparent 70%);}
+.hs-timer.koth::after{background:radial-gradient(circle,rgba(250,204,21,.22),transparent 70%);}
+.hs-timer small{color:#c084fc;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:12px;}
+.hs-timer.koth small{color:#facc15;}
+.hs-timer .hs-title{color:#fff;font-size:17px;}
+.hs-timer .hs-left{font:400 30px var(--font-display);color:#fff;letter-spacing:.02em;}
+.hs-timer .hs-when{color:var(--parchment-dim);font-style:normal;font-weight:600;font-size:13px;text-transform:capitalize;}
+@media (max-width:900px){.hs-wrap{grid-template-columns:1fr;}}

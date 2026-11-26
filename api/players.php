@@ -3,7 +3,7 @@
    GET q=nick            → našeptávač
    GET home=1            → online, naposledy aktivní, noví hráči
    GET nick=Nick         → profil
-   GET top=play|money|kills|mobs|votes|fish → žebříček TOP 10
+   GET top=play|money|kills|mobs|votes|fish|quests|vyp → žebříček TOP 10
    POST {bio, frame}     → úprava vlastního profilu (jen po přihlášení Minecraft účtem) */
 require __DIR__ . '/auth-lib.php';
 require_once __DIR__ . '/config.php';
@@ -34,6 +34,11 @@ const BADGES = [
     'clean'     => ['Čistý štít', 'Přes 20 hodin hraní a žádný trest', '🕊️'],
     'rich'      => ['Boháč', 'TOP 10 nejbohatších hráčů', '💰'],
     'topplay'   => ['Nehasnoucí', 'TOP 10 v odehraném čase', '🏆'],
+    'quest100'  => ['Dobrodruh', 'Splněno 100 questů', '📜'],
+    'quest500'  => ['Hrdina', 'Splněno 500 questů', '🗡️'],
+    'quest1000' => ['Prastarý', 'Splněno 1000 questů – odemčené Výpravy Prastarých', '✦'],
+    'vyp1'      => ['Na výpravě', 'První splněná Výprava Prastarých', '🧭'],
+    'vyp100'    => ['Strážce věků', 'Dokončeno celé kolo (100) Výprav Prastarých', '🌌'],
 ];
 
 function pl_all(): array { return store_load('players'); }
@@ -126,7 +131,7 @@ if (isset($_GET['top'])) {
             wyl_json(200, ['ok' => true, 'top' => array_map(fn($r) => ['name' => $r['name'], 'value' => (int)$r['v']], $rows)]);
         } catch (Throwable $e) { wyl_json(200, ['ok' => true, 'top' => []]); }
     }
-    if (!in_array($field, ['play', 'money', 'kills', 'mobs', 'fish', 'walk'], true)) wyl_json(400, ['ok' => false]);
+    if (!in_array($field, ['play', 'money', 'kills', 'mobs', 'fish', 'walk', 'quests', 'vyp'], true)) wyl_json(400, ['ok' => false]);
     $rows = pl_top($all, $field, 10);
     wyl_json(200, ['ok' => true, 'connected' => count($all) > 0, 'top' => array_map(fn($p) => ['name' => $p['name'], 'value' => $p[$field],
         'online' => in_array(strtolower($p['name']), $online, true)], array_slice(array_values($rows), 0, 10))]);
@@ -185,6 +190,9 @@ if (($p['mobs'] ?? 0) >= 5000) $has[] = 'hunter';
 if (($p['fish'] ?? 0) >= 500) $has[] = 'fisher';
 if (($p['walk'] ?? 0) >= 100000000) $has[] = 'traveler';
 if ($h >= 20 && $pun['total'] === 0) $has[] = 'clean';
+foreach ([100 => 'quest100', 500 => 'quest500', 1000 => 'quest1000'] as $lim => $b) if (($p['quests'] ?? 0) >= $lim) $has[] = $b;
+if (($p['vyp'] ?? 0) >= 1) $has[] = 'vyp1';
+if (($p['vyp'] ?? 0) >= 100) $has[] = 'vyp100';
 if ($p && in_array($p['uuid'] ?? '', array_column(pl_top($all, 'money'), 'uuid'), true)) $has[] = 'rich';
 if ($p && in_array($p['uuid'] ?? '', array_column(pl_top($all, 'play'), 'uuid'), true)) $has[] = 'topplay';
 
@@ -205,6 +213,7 @@ wyl_json(200, [
         'hours' => round($h, 1), 'first' => $p['first'] ?? null, 'last' => $p['last'] ?? null,
         'money' => $p['money'] ?? null, 'kills' => $p['kills'] ?? null, 'deaths' => $p['deaths'] ?? null,
         'mobs' => $p['mobs'] ?? null, 'fish' => $p['fish'] ?? null, 'km' => isset($p['walk']) ? round($p['walk'] / 100000, 1) : null,
+        'quests' => $p['quests'] ?? null, 'qrank' => $p['qrank'] ?? null, 'vyp' => $p['vyp'] ?? null,
     ] : null,
     'votes' => $votes,
     'team' => $team[$key] ?? null,
