@@ -58,6 +58,8 @@ public final class WylVypravy extends JavaPlugin implements Listener {
 
     enum Action { BREAK_BLOCK, KILL_MOB, FISH, HARVEST, CRAFT, SMELT, BREED, ENCHANT }
 
+    record Template(Action action, Set<String> targets, int base, String text, Material icon) { }
+
     record Quest(String id, String name, int level, Action action, Set<String> targets, int amount,
                  String text, Material icon, int timeMinutes, int gems, int money) {
         boolean matches(String target) { return targets.contains("ANY") || targets.contains(target); }
@@ -66,6 +68,8 @@ public final class WylVypravy extends JavaPlugin implements Listener {
     /** Stav hráče. */
     static final class Data {
         final Set<String> completed = new LinkedHashSet<>();
+        int round = 1;              // kolo výprav (po dokončení všech se vygeneruje nové)
+        Map<String, Quest> quests;  // vygenerované výpravy tohoto kola (neukládá se, generuje se ze semínka)
         String active;          // id aktivní výpravy
         int progress;
         long remaining;         // zbývající sekundy (time-online-only)
@@ -85,7 +89,10 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         for (int row = 1; row <= 4; row++) for (int col = 1; col <= 7; col++) QUEST_SLOTS[i++] = row * 9 + col;
     }
 
-    private final Map<String, Quest> quests = new LinkedHashMap<>();
+    private final List<Template> templates = new ArrayList<>();
+    private final Map<Action, List<String>> names = new EnumMap<>(Action.class);
+    private static final double[] MULT = {0, 0.5, 0.75, 1, 1.4, 1.9, 2.5, 3.3, 4.3, 5.6};
+    private int perRound, gemsMin, gemsMax, moneyPerLevel, timeBase, timePerLevel;
     private final Map<UUID, Data> data = new HashMap<>();
     private final Map<UUID, BossBar> bars = new HashMap<>();
     private final Set<Material> trackedPlaced = EnumSet.noneOf(Material.class);
@@ -103,14 +110,14 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         dataDir = new File(getDataFolder(), "data");
         dataDir.mkdirs();
         saveDefaultConfig();
-        if (!new File(getDataFolder(), "quests.yml").exists()) saveResource("quests.yml", false);
+        if (!new File(getDataFolder(), "sablony.yml").exists()) saveResource("sablony.yml", false);
         loadAll();
         Bukkit.getPluginManager().registerEvents(this, this);
         for (Player p : Bukkit.getOnlinePlayers()) data(p.getUniqueId());
         Bukkit.getScheduler().runTaskTimer(this, this::tick, 20L, 20L);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::saveDirty, 600L, 600L);
         new Expansion().register();
-        getLogger().info("Výpravy Prastarých: " + quests.size() + " výprav.");
+        getLogger().info("Výpravy Prastarých: " + templates.size() + " šablon, " + perRound + " výprav na kolo.");
     }
 
     @Override
@@ -128,30 +135,78 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         countSpawner = c.getBoolean("count-spawner-mobs", false);
         bossbarOn = c.getBoolean("bossbar", true);
 
-        quests.clear();
+        perRound = Math.max(1, c.getInt("quests-per-round", 100));
+        gemsMin = c.getInt("gems-min", 5);
+        gemsMax = c.getInt("gems-max", 10);
+        moneyPerLevel = c.getInt("money-per-level", 250);
+        timeBase = c.getInt("time-base-minutes", 20);
+        timePerLevel = c.getInt("time-per-level-minutes", 12);
+
+        templates.clear();
+        names.clear();
         trackedPlaced.clear();
-        YamlConfiguration q = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "quests.yml"));
-        ConfigurationSection sec = q.getConfigurationSection("quests");
-        if (sec == null) return;
-        for (String id : sec.getKeys(false)) {
-            ConfigurationSection s = sec.getConfigurationSection(id);
-            if (s == null) continue;
+        YamlConfiguration q = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "sablony.yml"));
+        ConfigurationSection sec = q.getConfigurationSection("templates");
+        if (sec != null) for (String id : sec.getKeys(false)) {
+            ConfigurationSection t = sec.getConfigurationSection(id);
+            if (t == null) continue;
             Action a;
-            try { a = Action.valueOf(s.getString("action", "").toUpperCase(Locale.ROOT)); }
-            catch (IllegalArgumentException e) { getLogger().warning("Výprava " + id + ": neznámá akce"); continue; }
+            try { a = Action.valueOf(t.getString("action", "").toUpperCase(Locale.ROOT)); }
+            catch (IllegalArgumentException e) { getLogger().warning("Šablona " + id + ": neznámá akce"); continue; }
             Set<String> targets = new HashSet<>();
-            for (String t : s.getString("target", "ANY").split(",")) targets.add(t.trim().toUpperCase(Locale.ROOT));
-            Material icon = Material.matchMaterial(s.getString("icon", "PAPER"));
-            Quest quest = new Quest(id, s.getString("name", "Výprava " + id), Math.max(1, Math.min(9, s.getInt("level", 1))),
-                    a, targets, Math.max(1, s.getInt("amount", 1)), s.getString("text", ""),
-                    icon == null || !icon.isItem() ? Material.PAPER : icon,
-                    Math.max(1, s.getInt("time-minutes", 60)), s.getInt("gems", 0), s.getInt("money", 0));
-            quests.put(id, quest);
-            if (a == Action.BREAK_BLOCK || a == Action.HARVEST) for (String t : targets) {
-                Material m = Material.matchMaterial(t);
-                if (m != null && m.isBlock() && (a == Action.BREAK_BLOCK || m == Material.MELON || m == Material.PUMPKIN)) trackedPlaced.add(m);
+            for (String x : t.getString("target", "ANY").split(",")) targets.add(x.trim().toUpperCase(Locale.ROOT));
+            Material icon = Material.matchMaterial(t.getString("icon", "PAPER"));
+            templates.add(new Template(a, targets, Math.max(1, t.getInt("base", 10)), t.getString("text", ""),
+                    icon == null || !icon.isItem() ? Material.PAPER : icon));
+            if (a == Action.BREAK_BLOCK || a == Action.HARVEST) for (String x : targets) {
+                Material m = Material.matchMaterial(x);
+                if (m != null && m.isBlock()) trackedPlaced.add(m);
             }
         }
+        ConfigurationSection ns = q.getConfigurationSection("names");
+        if (ns != null) for (String k : ns.getKeys(false)) {
+            try { names.put(Action.valueOf(k.toUpperCase(Locale.ROOT)), ns.getStringList(k)); } catch (IllegalArgumentException ignored) { }
+        }
+        for (Data d : data.values()) d.quests = null;   // přegenerovat podle nových šablon
+    }
+
+    private static int nice(double n) {
+        if (n < 20) return (int) Math.max(1, Math.round(n));
+        if (n < 100) return (int) (Math.round(n / 5) * 5);
+        if (n < 1000) return (int) (Math.round(n / 10) * 10);
+        return (int) (Math.round(n / 50) * 50);
+    }
+
+    private static final String[] ROMAN = {"", "", " II", " III", " IV", " V", " VI", " VII", " VIII", " IX", " X", " XI", " XII", " XIII", " XIV", " XV"};
+
+    /** Výpravy hráče pro jeho aktuální kolo – vždy stejné pro stejného hráče a kolo. */
+    private Map<String, Quest> quests(UUID id, Data d) {
+        if (d.quests != null) return d.quests;
+        Map<String, Quest> out = new LinkedHashMap<>();
+        if (templates.isEmpty()) return d.quests = out;
+        Random r = new Random(id.getMostSignificantBits() ^ id.getLeastSignificantBits() ^ (d.round * 0x9E3779B97F4A7C15L));
+        List<Integer> levels = new ArrayList<>();
+        for (int i = 0; i < perRound; i++) levels.add(1 + (i % 9));
+        Collections.shuffle(levels, r);
+        Map<String, Integer> used = new HashMap<>();
+        for (int i = 0; i < perRound; i++) {
+            Template t = templates.get(r.nextInt(templates.size()));
+            int lvl = levels.get(i);
+            int amount = nice(t.base() * MULT[lvl]);
+            List<String> pool = names.getOrDefault(t.action(), List.of("Výprava"));
+            String base = pool.isEmpty() ? "Výprava" : pool.get(r.nextInt(pool.size()));
+            int n = used.merge(base, 1, Integer::sum);
+            String name = base + (n < ROMAN.length ? ROMAN[n] : " " + n);
+            int gems = gemsMin + (int) Math.round((lvl - 1) * (gemsMax - gemsMin) / 8.0);
+            String qid = String.valueOf(i + 1);
+            out.put(qid, new Quest(qid, name, lvl, t.action(), t.targets(), amount, t.text().replace("{n}", String.valueOf(amount)),
+                    t.icon(), timeBase + timePerLevel * lvl, gems, moneyPerLevel * lvl));
+        }
+        return d.quests = out;
+    }
+
+    private Quest active(UUID id, Data d) {
+        return d.active == null ? null : quests(id, d).get(d.active);
     }
 
     // =========================================================== data
@@ -166,6 +221,7 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         if (!f.exists()) return d;
         YamlConfiguration y = YamlConfiguration.loadConfiguration(f);
         d.completed.addAll(y.getStringList("completed"));
+        d.round = Math.max(1, y.getInt("round", 1));
         d.active = y.getString("active.id");
         d.progress = y.getInt("active.progress");
         d.remaining = y.getLong("active.remaining");
@@ -173,7 +229,6 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         d.fails = y.getInt("fails");
         d.allDone = y.getBoolean("all-done");
         d.unlockedNotified = y.getBoolean("unlocked-notified");
-        if (d.active != null && !quests.containsKey(d.active)) d.active = null;
         return d;
     }
 
@@ -181,6 +236,7 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         Data d = data.get(id);
         if (d == null) return;
         YamlConfiguration y = new YamlConfiguration();
+        y.set("round", d.round);
         y.set("completed", new ArrayList<>(d.completed));
         if (d.active != null) {
             y.set("active.id", d.active);
@@ -207,7 +263,9 @@ public final class WylVypravy extends JavaPlugin implements Listener {
     }
 
     private boolean unlocked(Player p) {
-        return p.hasPermission("wylvypravy.admin") && p.isOp() || questCoreCompleted(p) >= unlockQuests;
+        if (p.hasPermission("wylvypravy.admin") || p.isOp()) return true;
+        for (String g : getConfig().getStringList("admin-groups")) if (p.hasPermission("group." + g)) return true;
+        return questCoreCompleted(p) >= unlockQuests;
     }
 
     // =========================================================== texty
@@ -297,13 +355,14 @@ public final class WylVypravy extends JavaPlugin implements Listener {
             send(p, "locked", "%need%", String.valueOf(unlockQuests), "%have%", String.valueOf(questCoreCompleted(p)));
             return;
         }
+        Data d = data(p.getUniqueId());
+        Map<String, Quest> quests = quests(p.getUniqueId(), d);
         int pages = Math.max(1, (int) Math.ceil(quests.size() / (double) PER_PAGE));
         page = Math.max(0, Math.min(pages - 1, page));
         Menu holder = new Menu(page);
         Inventory inv = Bukkit.createInventory(holder, 54,
                 color("&#8B5CF6&l✦ &#C084FC&lVýpravy Prastarých &8(" + (page + 1) + "/" + pages + ")"));
         holder.inv = inv;
-        Data d = data(p.getUniqueId());
 
         ItemStack dark = item(Material.BLACK_STAINED_GLASS_PANE, " ", List.of(), false);
         ItemStack purple = item(Material.PURPLE_STAINED_GLASS_PANE, " ", List.of(), false);
@@ -313,9 +372,12 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         }
 
         int done = d.completed.size(), total = quests.size();
-        inv.setItem(4, item(Material.NETHER_STAR, "&#C084FC&l✦ Výpravy Prastarých ✦", List.of(
+        inv.setItem(4, item(Material.NETHER_STAR, "&#C084FC&l✦ Výpravy Prastarých ✦ &8– kolo " + d.round, List.of(
                 "&7Prastaré zkoušky pro ty, kdo splnili",
                 "&7přes &f" + unlockQuests + " &7questů.",
+                "",
+                "&7Za dokončení všech &f" + quests.size() + " &7výprav: &#5BC8FF+100 gemů",
+                "&7a nové kolo s novými výpravami.",
                 "",
                 "&7Splněno: &f" + done + "&7/&f" + total + "  " + bar(done, total, 20),
                 "&7Nezdary: &c" + d.fails,
@@ -333,7 +395,7 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         if (page > 0) inv.setItem(45, item(Material.ARROW, "&#C084FC« Předchozí strana", List.of(), false));
         if (page < pages - 1) inv.setItem(53, item(Material.ARROW, "&#C084FCDalší strana »", List.of(), false));
         inv.setItem(49, item(Material.BARRIER, "&cZavřít", List.of(), false));
-        inv.setItem(47, activeItem(d));
+        inv.setItem(47, activeItem(p.getUniqueId(), d));
         inv.setItem(51, item(Material.KNOWLEDGE_BOOK, "&#FACC15&lJak to funguje", List.of(
                 "&7Levým klikem na výpravu ji &apřijmeš&7.",
                 "&7Čas běží jen když jsi na serveru.",
@@ -348,8 +410,8 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         p.openInventory(inv);
     }
 
-    private ItemStack activeItem(Data d) {
-        Quest q = d.active == null ? null : quests.get(d.active);
+    private ItemStack activeItem(UUID id, Data d) {
+        Quest q = active(id, d);
         if (q == null) return item(Material.CLOCK, "&7Žádná aktivní výprava", List.of("&8Vyber si výpravu v menu."), false);
         return item(Material.CLOCK, "&#FACC15&lAktivní: &f" + q.name(), List.of(
                 "&f" + q.text(),
@@ -395,10 +457,10 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         for (int i = 0; i < PER_PAGE; i++) {
             if (QUEST_SLOTS[i] != slot) continue;
             int idx = menu.page * PER_PAGE + i;
-            List<Quest> list = new ArrayList<>(quests.values());
+            Data d = data(p.getUniqueId());
+            List<Quest> list = new ArrayList<>(quests(p.getUniqueId(), d).values());
             if (idx >= list.size()) return;
             Quest q = list.get(idx);
-            Data d = data(p.getUniqueId());
             if (q.id().equals(d.active)) {
                 if (e.getClick() == ClickType.SHIFT_RIGHT) {
                     d.active = null;
@@ -446,7 +508,7 @@ public final class WylVypravy extends JavaPlugin implements Listener {
                 sound(p, "complete");
             }
             if (d.active == null) { updateBar(p, d); continue; }
-            Quest q = quests.get(d.active);
+            Quest q = active(p.getUniqueId(), d);
             if (q == null) { d.active = null; continue; }
             if (onlineOnly) { d.remaining--; d.dirty = true; }
             if (remainingSec(d) <= 0) {
@@ -464,7 +526,7 @@ public final class WylVypravy extends JavaPlugin implements Listener {
 
     private void updateBar(Player p, Data d) {
         BossBar b = bars.get(p.getUniqueId());
-        Quest q = d.active == null ? null : quests.get(d.active);
+        Quest q = active(p.getUniqueId(), d);
         if (!bossbarOn || q == null) {
             if (b != null) { b.removeAll(); bars.remove(p.getUniqueId()); }
             return;
@@ -486,7 +548,7 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         if (n <= 0) return;
         Data d = data.get(p.getUniqueId());
         if (d == null || d.active == null) return;
-        Quest q = quests.get(d.active);
+        Quest q = active(p.getUniqueId(), d);
         if (q == null || q.action() != a || !q.matches(target)) return;
         int before = d.progress;
         d.progress = Math.min(q.amount(), d.progress + n);
@@ -513,10 +575,13 @@ public final class WylVypravy extends JavaPlugin implements Listener {
         send(p, "completed", "%name%", q.name(), "%gems%", String.valueOf(q.gems()));
         sound(p, "complete");
         p.sendTitle(color("&#C084FC&l✦ Výprava splněna ✦"), color("&f" + q.name()), 10, 60, 20);
-        if (!d.allDone && d.completed.containsAll(quests.keySet())) {
-            d.allDone = true;
-            for (String c : getConfig().getStringList("all-done-commands"))
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), color(c.replace("%player%", name)));
+        if (d.completed.containsAll(quests(p.getUniqueId(), d).keySet())) {
+            for (String c : getConfig().getStringList("round-done-commands"))
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), color(c.replace("%player%", name).replace("%round%", String.valueOf(d.round))));
+            d.round++;
+            d.completed.clear();
+            d.quests = null;
+            send(p, "new-round", "%round%", String.valueOf(d.round));
         }
         updateBar(p, d);
         save(p.getUniqueId());
@@ -633,7 +698,7 @@ public final class WylVypravy extends JavaPlugin implements Listener {
                 case "reload" -> {
                     for (UUID id : new ArrayList<>(data.keySet())) save(id);
                     loadAll();
-                    s.sendMessage(color("&aVýpravy načteny: " + quests.size()));
+                    s.sendMessage(color("&aŠablony načteny: " + templates.size()));
                     return true;
                 }
                 case "reset" -> {
@@ -676,10 +741,11 @@ public final class WylVypravy extends JavaPlugin implements Listener {
             if (op == null) return "";
             Data d = data.get(op.getUniqueId());
             if (d == null) return "";
-            Quest q = d.active == null ? null : quests.get(d.active);
+            Quest q = active(op.getUniqueId(), d);
             return switch (params) {
                 case "completed" -> String.valueOf(d.completed.size());
-                case "total" -> String.valueOf(quests.size());
+                case "total" -> String.valueOf(perRound);
+                case "round" -> String.valueOf(d.round);
                 case "active" -> q == null ? "" : q.name();
                 case "active_progress" -> q == null ? "" : d.progress + "/" + q.amount();
                 case "active_time" -> q == null ? "" : time(remainingSec(d));

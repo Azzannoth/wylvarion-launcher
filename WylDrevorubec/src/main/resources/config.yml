@@ -10,8 +10,8 @@
 # Po změně: /drevorubec reload
 
 # Kácet jen když hráč DRŽÍ shift (true), nebo jen když NEDRŽÍ shift (false).
-# Nejčastěji: false = normálně kácí celý strom, se shiftem jen jeden blok.
-require-sneak: false
+# true = se shiftem pokácí celý strom, bez shiftu se seká normálně po jednom bloku.
+require-sneak: true
 
 # Animace – kmeny padají postupně odspodu nahoru (počet bloků za tick). 0 = vše najednou.
 blocks-per-tick: 3

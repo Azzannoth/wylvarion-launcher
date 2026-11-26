@@ -19,10 +19,24 @@ count-spawner-mobs: false
 reward-gems-command: "gems give %player% %amount%"
 reward-money-command: "eco give %player% %amount%"
 
-# Odměna za dokončení VŠECH výprav (jednorázově).
-all-done-commands:
-  - "gems give %player% 5000"
-  - "broadcast &#C084FC&l✦ %player% &fdokončil všech 100 Výprav Prastarých! &#C084FC&l✦"
+# Kolik výprav je v jednom kole. Po dokončení všech se vygeneruje nové kolo (nové náhodné výpravy).
+quests-per-round: 100
+# Gemy za výpravu: úroveň 1 = gems-min ... úroveň 9 = gems-max.
+gems-min: 5
+gems-max: 10
+# Peníze za výpravu = úroveň × money-per-level (0 = bez peněz).
+money-per-level: 250
+# Časový limit = time-base-minutes + úroveň × time-per-level-minutes.
+time-base-minutes: 20
+time-per-level-minutes: 12
+
+# Odměna za dokončení celého kola (%round% = číslo dokončeného kola).
+round-done-commands:
+  - "gems give %player% 100"
+  - "broadcast &#C084FC&l✦ &f%player% &7dokončil &f%round%. kolo &7Výprav Prastarých! &#C084FC&l✦"
+
+# Skupiny LuckPerms, které vidí Výpravy i bez 1000 questů (admini).
+admin-groups: [owner, coowner, hladmin, admin, technik]
 
 # Bossbar s časem a postupem aktivní výpravy.
 bossbar: true
@@ -45,3 +59,4 @@ messages:
   completed: "&a&lVýprava splněna! &f%name% &7– odměna &#5BC8FF%gems% gemů&7."
   failed: "&c&lČas vypršel! &7Výprava &f%name% &7se vynulovala. Zkus to znovu."
   reloaded: "Konfigurace a výpravy načteny."
+  new-round: "&#C084FC&lNové kolo! &7Začíná &f%round%. kolo &7– čeká tě 100 nových výprav."

@@ -1,0 +1,322 @@
+# Výpravy Prastarých – ŠABLONY. Z nich se každému hráči náhodně vygeneruje 100 výprav (úroveň 1-9).
+# Po dokončení všech 100 dostane hráč bonus a vygeneruje se nové kolo.
+# action: KILL_MOB, FISH, CRAFT, SMELT, BREED, ENCHANT (BREAK_BLOCK / HARVEST jdou taky, ale nejsou tu záměrně)
+# target: moby/itemy oddělené čárkou (ANY = cokoli)   base: počet pro úroveň 3 (ostatní úrovně se dopočítají)
+# text: popis, {n} = počet   icon: item v menu
+templates:
+  t1:
+    action: KILL_MOB
+    target: "ZOMBIE"
+    base: 80
+    text: "Zabij {n}× zombie"
+    icon: ROTTEN_FLESH
+  t2:
+    action: KILL_MOB
+    target: "SKELETON"
+    base: 80
+    text: "Zabij {n}× kostlivce"
+    icon: BONE
+  t3:
+    action: KILL_MOB
+    target: "CREEPER"
+    base: 50
+    text: "Zabij {n}× creepera"
+    icon: GUNPOWDER
+  t4:
+    action: KILL_MOB
+    target: "SPIDER,CAVE_SPIDER"
+    base: 60
+    text: "Zabij {n}× pavouka"
+    icon: SPIDER_EYE
+  t5:
+    action: KILL_MOB
+    target: "ENDERMAN"
+    base: 40
+    text: "Zabij {n}× endermana"
+    icon: ENDER_PEARL
+  t6:
+    action: KILL_MOB
+    target: "BLAZE"
+    base: 40
+    text: "Zabij {n}× blaze"
+    icon: BLAZE_ROD
+  t7:
+    action: KILL_MOB
+    target: "WITHER_SKELETON"
+    base: 20
+    text: "Zabij {n}× wither kostlivce"
+    icon: WITHER_SKELETON_SKULL
+  t8:
+    action: KILL_MOB
+    target: "PIGLIN,ZOMBIFIED_PIGLIN"
+    base: 50
+    text: "Zabij {n}× piglina"
+    icon: GOLD_NUGGET
+  t9:
+    action: KILL_MOB
+    target: "GHAST"
+    base: 10
+    text: "Zabij {n}× ghasta"
+    icon: GHAST_TEAR
+  t10:
+    action: KILL_MOB
+    target: "MAGMA_CUBE"
+    base: 40
+    text: "Zabij {n}× magmovou kostku"
+    icon: MAGMA_CREAM
+  t11:
+    action: KILL_MOB
+    target: "SLIME"
+    base: 40
+    text: "Zabij {n}× slima"
+    icon: SLIME_BALL
+  t12:
+    action: KILL_MOB
+    target: "WITCH"
+    base: 12
+    text: "Zabij {n}× čarodějnici"
+    icon: GLASS_BOTTLE
+  t13:
+    action: KILL_MOB
+    target: "PHANTOM"
+    base: 20
+    text: "Zabij {n}× fantoma"
+    icon: PHANTOM_MEMBRANE
+  t14:
+    action: KILL_MOB
+    target: "DROWNED"
+    base: 50
+    text: "Zabij {n}× utopence"
+    icon: TRIDENT
+  t15:
+    action: KILL_MOB
+    target: "HUSK,STRAY"
+    base: 50
+    text: "Zabij {n}× huska nebo straye"
+    icon: SAND
+  t16:
+    action: KILL_MOB
+    target: "GUARDIAN"
+    base: 30
+    text: "Zabij {n}× strážce"
+    icon: PRISMARINE_SHARD
+  t17:
+    action: KILL_MOB
+    target: "PILLAGER,VINDICATOR"
+    base: 25
+    text: "Zabij {n}× nájezdníka"
+    icon: CROSSBOW
+  t18:
+    action: KILL_MOB
+    target: "HOGLIN"
+    base: 20
+    text: "Zabij {n}× hoglina"
+    icon: COOKED_PORKCHOP
+  t19:
+    action: KILL_MOB
+    target: "SHULKER"
+    base: 15
+    text: "Zabij {n}× shulkera"
+    icon: SHULKER_SHELL
+  t20:
+    action: KILL_MOB
+    target: "BREEZE"
+    base: 10
+    text: "Zabij {n}× breeze"
+    icon: BREEZE_ROD
+  t21:
+    action: FISH
+    target: "COD"
+    base: 60
+    text: "Chyť {n}× tresku"
+    icon: COD
+  t22:
+    action: FISH
+    target: "SALMON"
+    base: 40
+    text: "Chyť {n}× lososa"
+    icon: SALMON
+  t23:
+    action: FISH
+    target: "TROPICAL_FISH"
+    base: 12
+    text: "Chyť {n}× tropickou rybu"
+    icon: TROPICAL_FISH
+  t24:
+    action: FISH
+    target: "PUFFERFISH"
+    base: 12
+    text: "Chyť {n}× čtverzubce"
+    icon: PUFFERFISH
+  t25:
+    action: FISH
+    target: "ANY"
+    base: 80
+    text: "Chyť {n}× cokoli na udici"
+    icon: FISHING_ROD
+  t26:
+    action: CRAFT
+    target: "BREAD"
+    base: 64
+    text: "Vyrob {n}× chleba"
+    icon: BREAD
+  t27:
+    action: CRAFT
+    target: "CAKE"
+    base: 6
+    text: "Upeč {n}× dort"
+    icon: CAKE
+  t28:
+    action: CRAFT
+    target: "GOLDEN_CARROT"
+    base: 48
+    text: "Vyrob {n}× zlatou mrkev"
+    icon: GOLDEN_CARROT
+  t29:
+    action: CRAFT
+    target: "TNT"
+    base: 16
+    text: "Vyrob {n}× TNT"
+    icon: TNT
+  t30:
+    action: CRAFT
+    target: "BOOKSHELF"
+    base: 12
+    text: "Vyrob {n}× knihovnu"
+    icon: BOOKSHELF
+  t31:
+    action: CRAFT
+    target: "GOLDEN_APPLE"
+    base: 6
+    text: "Vyrob {n}× zlaté jablko"
+    icon: GOLDEN_APPLE
+  t32:
+    action: CRAFT
+    target: "IRON_BLOCK"
+    base: 12
+    text: "Vyrob {n}× železný blok"
+    icon: IRON_BLOCK
+  t33:
+    action: CRAFT
+    target: "ARROW"
+    base: 128
+    text: "Vyrob {n}× šíp"
+    icon: ARROW
+  t34:
+    action: CRAFT
+    target: "LANTERN"
+    base: 24
+    text: "Vyrob {n}× lucernu"
+    icon: LANTERN
+  t35:
+    action: SMELT
+    target: "IRON_INGOT"
+    base: 128
+    text: "Přetav {n}× železný ingot"
+    icon: IRON_INGOT
+  t36:
+    action: SMELT
+    target: "GOLD_INGOT"
+    base: 64
+    text: "Přetav {n}× zlatý ingot"
+    icon: GOLD_INGOT
+  t37:
+    action: SMELT
+    target: "COPPER_INGOT"
+    base: 128
+    text: "Přetav {n}× měděný ingot"
+    icon: COPPER_INGOT
+  t38:
+    action: SMELT
+    target: "GLASS"
+    base: 256
+    text: "Vypal {n}× sklo"
+    icon: GLASS
+  t39:
+    action: SMELT
+    target: "COOKED_BEEF,COOKED_PORKCHOP,COOKED_MUTTON,COOKED_CHICKEN"
+    base: 64
+    text: "Upeč {n}× maso"
+    icon: COOKED_BEEF
+  t40:
+    action: SMELT
+    target: "NETHERITE_SCRAP"
+    base: 4
+    text: "Přetav {n}× netheritový úlomek"
+    icon: NETHERITE_SCRAP
+  t41:
+    action: SMELT
+    target: "SMOOTH_STONE"
+    base: 128
+    text: "Vypal {n}× hladký kámen"
+    icon: SMOOTH_STONE
+  t42:
+    action: BREED
+    target: "COW,MOOSHROOM"
+    base: 25
+    text: "Rozmnož {n}× krávu"
+    icon: WHEAT
+  t43:
+    action: BREED
+    target: "SHEEP"
+    base: 25
+    text: "Rozmnož {n}× ovci"
+    icon: WHITE_WOOL
+  t44:
+    action: BREED
+    target: "PIG"
+    base: 25
+    text: "Rozmnož {n}× prase"
+    icon: CARROT
+  t45:
+    action: BREED
+    target: "CHICKEN"
+    base: 25
+    text: "Rozmnož {n}× slepici"
+    icon: WHEAT_SEEDS
+  t46:
+    action: BREED
+    target: "HORSE,DONKEY"
+    base: 6
+    text: "Rozmnož {n}× koně"
+    icon: SADDLE
+  t47:
+    action: ENCHANT
+    target: "ANY"
+    base: 8
+    text: "Očaruj {n}× předmět"
+    icon: ENCHANTING_TABLE
+
+# Názvy výprav podle akce (vybírají se náhodně, opakování dostane římské číslo).
+names:
+  KILL_MOB:
+    - "Krvavá přísaha"
+    - "Hon na bestie"
+    - "Čepel úsvitu"
+    - "Pomsta padlých"
+    - "Lov ve stínech"
+    - "Noc dlouhých čepelí"
+    - "Strážce hranic"
+    - "Zkouška ocelí"
+    - "Pád temnoty"
+    - "Přísaha lovce"
+  FISH:
+    - "Píseň vln"
+    - "Rybářova legenda"
+    - "Dar hlubin"
+    - "Klid jezera"
+  CRAFT:
+    - "Mistrovo dílo"
+    - "Kovářova zkouška"
+    - "Ruce řemeslníka"
+    - "Dílna Prastarých"
+  SMELT:
+    - "Plamen výhně"
+    - "Srdce kovárny"
+    - "Žár tavicí pece"
+  BREED:
+    - "Pastýřova přízeň"
+    - "Hojnost stáda"
+  ENCHANT:
+    - "Runy moudrosti"
+    - "Šepot magie"
