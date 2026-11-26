@@ -1,0 +1,1105 @@
+# Výpravy Prastarých – 100 výprav. Upravuj klidně ručně, pak /vypravy reload.
+# action: BREAK_BLOCK, KILL_MOB, FISH, HARVEST, CRAFT, SMELT, BREED, ENCHANT
+# target: bloky/moby/itemy oddělené čárkou (ANY = cokoli)   amount: kolik   level: 1-9
+# time-minutes: časový limit (počítá se jen čas na serveru)   gems / money: odměna
+quests:
+  '1':
+    name: "Píseň polí"
+    level: 6
+    action: HARVEST
+    target: "WHEAT"
+    amount: 750
+    text: "Sklid 750× pšenici"
+    icon: WHEAT
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '2':
+    name: "Zlatá žeň"
+    level: 4
+    action: HARVEST
+    target: "CARROTS"
+    amount: 420
+    text: "Sklid 420× mrkev"
+    icon: CARROT
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '3':
+    name: "Prokletý důl"
+    level: 1
+    action: BREAK_BLOCK
+    target: "DIAMOND_ORE,DEEPSLATE_DIAMOND_ORE"
+    amount: 6
+    text: "Vytěž 6× diamantovou rudu"
+    icon: DIAMOND_ORE
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '4':
+    name: "Dar hlubin"
+    level: 9
+    action: FISH
+    target: "ANY"
+    amount: 450
+    text: "Chyť 450× cokoli na udici"
+    icon: FISHING_ROD
+    time-minutes: 128
+    gems: 660
+    money: 4500
+  '5':
+    name: "Pomsta padlých"
+    level: 4
+    action: KILL_MOB
+    target: "HUSK,STRAY"
+    amount: 70
+    text: "Zabij 70× huska nebo straye"
+    icon: SAND
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '6':
+    name: "Hon na bestie"
+    level: 6
+    action: KILL_MOB
+    target: "SPIDER,CAVE_SPIDER"
+    amount: 150
+    text: "Zabij 150× pavouka"
+    icon: SPIDER_EYE
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '7':
+    name: "Žíla věčnosti"
+    level: 8
+    action: BREAK_BLOCK
+    target: "BLACKSTONE"
+    amount: 1300
+    text: "Vytěž 1300× černý kámen"
+    icon: BLACKSTONE
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '8':
+    name: "Žár tavicí pece"
+    level: 8
+    action: SMELT
+    target: "NETHERITE_SCRAP"
+    amount: 17
+    text: "Přetav 17× netheritový úlomek"
+    icon: NETHERITE_SCRAP
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '9':
+    name: "Noc dlouhých čepelí"
+    level: 6
+    action: KILL_MOB
+    target: "SLIME"
+    amount: 100
+    text: "Zabij 100× slima"
+    icon: SLIME_BALL
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '10':
+    name: "Žíla věčnosti II"
+    level: 2
+    action: BREAK_BLOCK
+    target: "ANCIENT_DEBRIS"
+    amount: 3
+    text: "Vytěž 3× prastarou trosku"
+    icon: ANCIENT_DEBRIS
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '11':
+    name: "Dílna Prastarých"
+    level: 6
+    action: CRAFT
+    target: "BREAD"
+    amount: 160
+    text: "Vyrob 160× chleba"
+    icon: BREAD
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '12':
+    name: "Zkouška ocelí"
+    level: 6
+    action: KILL_MOB
+    target: "ENDERMAN"
+    amount: 100
+    text: "Zabij 100× endermana"
+    icon: ENDER_PEARL
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '13':
+    name: "Zapomenuté žíly"
+    level: 3
+    action: BREAK_BLOCK
+    target: "SCULK"
+    amount: 80
+    text: "Vytěž 80× sculk"
+    icon: SCULK
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '14':
+    name: "Žíla věčnosti III"
+    level: 7
+    action: BREAK_BLOCK
+    target: "OBSIDIAN"
+    amount: 110
+    text: "Vytěž 110× obsidián"
+    icon: OBSIDIAN
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '15':
+    name: "Pastýřova přízeň"
+    level: 7
+    action: BREED
+    target: "COW,MOOSHROOM"
+    amount: 80
+    text: "Rozmnož 80× krávu"
+    icon: WHEAT
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '16':
+    name: "Runy moudrosti"
+    level: 3
+    action: ENCHANT
+    target: "ANY"
+    amount: 8
+    text: "Očaruj 8× předmět"
+    icon: ENCHANTING_TABLE
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '17':
+    name: "Žíla věčnosti IV"
+    level: 5
+    action: BREAK_BLOCK
+    target: "AMETHYST_CLUSTER"
+    amount: 40
+    text: "Sesbírej 40× ametystový krystal"
+    icon: AMETHYST_CLUSTER
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '18':
+    name: "Čepel úsvitu"
+    level: 2
+    action: KILL_MOB
+    target: "WITHER_SKELETON"
+    amount: 15
+    text: "Zabij 15× wither kostlivce"
+    icon: WITHER_SKELETON_SKULL
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '19':
+    name: "Požehnání sklizně"
+    level: 9
+    action: HARVEST
+    target: "MELON"
+    amount: 670
+    text: "Sklid 670× meloun"
+    icon: MELON
+    time-minutes: 128
+    gems: 660
+    money: 4500
+  '20':
+    name: "Píseň vln"
+    level: 3
+    action: FISH
+    target: "PUFFERFISH"
+    amount: 12
+    text: "Chyť 12× čtverzubce"
+    icon: PUFFERFISH
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '21':
+    name: "Lov ve stínech"
+    level: 4
+    action: KILL_MOB
+    target: "GHAST"
+    amount: 14
+    text: "Zabij 14× ghasta"
+    icon: GHAST_TEAR
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '22':
+    name: "Strážce hranic"
+    level: 5
+    action: KILL_MOB
+    target: "ZOMBIE"
+    amount: 150
+    text: "Zabij 150× zombie"
+    icon: ROTTEN_FLESH
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '23':
+    name: "Krvavá přísaha"
+    level: 1
+    action: KILL_MOB
+    target: "CREEPER"
+    amount: 25
+    text: "Zabij 25× creepera"
+    icon: GUNPOWDER
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '24':
+    name: "Dary země"
+    level: 9
+    action: HARVEST
+    target: "POTATOES"
+    amount: 1700
+    text: "Sklid 1700× brambory"
+    icon: POTATO
+    time-minutes: 128
+    gems: 660
+    money: 4500
+  '25':
+    name: "Přísaha lovce"
+    level: 1
+    action: KILL_MOB
+    target: "HOGLIN"
+    amount: 10
+    text: "Zabij 10× hoglina"
+    icon: COOKED_PORKCHOP
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '26':
+    name: "Žíla věčnosti V"
+    level: 7
+    action: BREAK_BLOCK
+    target: "END_STONE"
+    amount: 1300
+    text: "Vytěž 1300× endový kámen"
+    icon: END_STONE
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '27':
+    name: "Píseň polí II"
+    level: 8
+    action: HARVEST
+    target: "PUMPKIN"
+    amount: 520
+    text: "Sklid 520× dýni"
+    icon: PUMPKIN
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '28':
+    name: "Lov ve stínech II"
+    level: 9
+    action: KILL_MOB
+    target: "WITCH"
+    amount: 65
+    text: "Zabij 65× čarodějnici"
+    icon: GLASS_BOTTLE
+    time-minutes: 128
+    gems: 660
+    money: 4500
+  '29':
+    name: "Přísaha lovce II"
+    level: 3
+    action: KILL_MOB
+    target: "BREEZE"
+    amount: 10
+    text: "Zabij 10× breeze"
+    icon: BREEZE_ROD
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '30':
+    name: "Srdce kovárny"
+    level: 6
+    action: SMELT
+    target: "COOKED_BEEF,COOKED_PORKCHOP,COOKED_MUTTON,COOKED_CHICKEN"
+    amount: 160
+    text: "Upeč 160× maso"
+    icon: COOKED_BEEF
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '31':
+    name: "Dar hlubin II"
+    level: 2
+    action: FISH
+    target: "SALMON"
+    amount: 30
+    text: "Chyť 30× lososa"
+    icon: SALMON
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '32':
+    name: "Srdce hory"
+    level: 4
+    action: BREAK_BLOCK
+    target: "EMERALD_ORE,DEEPSLATE_EMERALD_ORE"
+    amount: 8
+    text: "Vytěž 8× smaragdovou rudu"
+    icon: EMERALD_ORE
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '33':
+    name: "Pád temnoty"
+    level: 2
+    action: KILL_MOB
+    target: "SKELETON"
+    amount: 60
+    text: "Zabij 60× kostlivce"
+    icon: BONE
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '34':
+    name: "Mistrovo dílo"
+    level: 1
+    action: CRAFT
+    target: "GOLDEN_CARROT"
+    amount: 25
+    text: "Vyrob 25× zlatou mrkev"
+    icon: GOLDEN_CARROT
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '35':
+    name: "Hojnost stáda"
+    level: 4
+    action: BREED
+    target: "HORSE,DONKEY"
+    amount: 8
+    text: "Rozmnož 8× koně"
+    icon: SADDLE
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '36':
+    name: "Klid jezera"
+    level: 5
+    action: FISH
+    target: "COD"
+    amount: 110
+    text: "Chyť 110× tresku"
+    icon: COD
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '37':
+    name: "Zlatá žeň II"
+    level: 4
+    action: HARVEST
+    target: "BEETROOTS"
+    amount: 350
+    text: "Sklid 350× řepu"
+    icon: BEETROOT
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '38':
+    name: "Strážce hranic II"
+    level: 3
+    action: KILL_MOB
+    target: "PILLAGER,VINDICATOR"
+    amount: 25
+    text: "Zabij 25× nájezdníka"
+    icon: CROSSBOW
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '39':
+    name: "Lov ve stínech III"
+    level: 1
+    action: KILL_MOB
+    target: "DROWNED"
+    amount: 25
+    text: "Zabij 25× utopence"
+    icon: TRIDENT
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '40':
+    name: "Přísaha lovce III"
+    level: 7
+    action: KILL_MOB
+    target: "BLAZE"
+    amount: 130
+    text: "Zabij 130× blaze"
+    icon: BLAZE_ROD
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '41':
+    name: "Čepel úsvitu II"
+    level: 5
+    action: KILL_MOB
+    target: "MAGMA_CUBE"
+    amount: 75
+    text: "Zabij 75× magmovou kostku"
+    icon: MAGMA_CREAM
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '42':
+    name: "Pastýřova přízeň II"
+    level: 3
+    action: BREED
+    target: "CHICKEN"
+    amount: 25
+    text: "Rozmnož 25× slepici"
+    icon: WHEAT_SEEDS
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '43':
+    name: "Plamen výhně"
+    level: 9
+    action: SMELT
+    target: "GOLD_INGOT"
+    amount: 360
+    text: "Přetav 360× zlatý ingot"
+    icon: GOLD_INGOT
+    time-minutes: 128
+    gems: 660
+    money: 4500
+  '44':
+    name: "Ruce řemeslníka"
+    level: 6
+    action: CRAFT
+    target: "CAKE"
+    amount: 15
+    text: "Upeč 15× dort"
+    icon: CAKE
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '45':
+    name: "Žár tavicí pece II"
+    level: 4
+    action: SMELT
+    target: "GLASS"
+    amount: 360
+    text: "Vypal 360× sklo"
+    icon: GLASS
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '46':
+    name: "Temné štoly"
+    level: 6
+    action: BREAK_BLOCK
+    target: "OAK_LOG,SPRUCE_LOG,BIRCH_LOG,JUNGLE_LOG,ACACIA_LOG,DARK_OAK_LOG,MANGROVE_LOG,CHERRY_LOG,PALE_OAK_LOG"
+    amount: 1000
+    text: "Pokácej 1000× kmen"
+    icon: OAK_LOG
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '47':
+    name: "Zlato trpaslíků"
+    level: 3
+    action: BREAK_BLOCK
+    target: "COAL_ORE,DEEPSLATE_COAL_ORE"
+    amount: 150
+    text: "Vytěž 150× uhelnou rudu"
+    icon: COAL_ORE
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '48':
+    name: "Prokletý důl II"
+    level: 4
+    action: BREAK_BLOCK
+    target: "LAPIS_ORE,DEEPSLATE_LAPIS_ORE"
+    amount: 40
+    text: "Vytěž 40× lapisovou rudu"
+    icon: LAPIS_ORE
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '49':
+    name: "Mistrovo dílo II"
+    level: 1
+    action: CRAFT
+    target: "TNT"
+    amount: 8
+    text: "Vyrob 8× TNT"
+    icon: TNT
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '50':
+    name: "Dech hlubin"
+    level: 8
+    action: BREAK_BLOCK
+    target: "REDSTONE_ORE,DEEPSLATE_REDSTONE_ORE"
+    amount: 220
+    text: "Vytěž 220× rudstonovou rudu"
+    icon: REDSTONE_ORE
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '51':
+    name: "Mistrovo dílo III"
+    level: 9
+    action: CRAFT
+    target: "BOOKSHELF"
+    amount: 65
+    text: "Vyrob 65× knihovnu"
+    icon: BOOKSHELF
+    time-minutes: 128
+    gems: 660
+    money: 4500
+  '52':
+    name: "Dílna Prastarých II"
+    level: 8
+    action: CRAFT
+    target: "LANTERN"
+    amount: 100
+    text: "Vyrob 100× lucernu"
+    icon: LANTERN
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '53':
+    name: "Pomsta padlých II"
+    level: 5
+    action: KILL_MOB
+    target: "GUARDIAN"
+    amount: 55
+    text: "Zabij 55× strážce"
+    icon: PRISMARINE_SHARD
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '54':
+    name: "Temné štoly II"
+    level: 4
+    action: BREAK_BLOCK
+    target: "GLOWSTONE"
+    amount: 90
+    text: "Vytěž 90× světlit"
+    icon: GLOWSTONE
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '55':
+    name: "Plamen výhně II"
+    level: 3
+    action: SMELT
+    target: "SMOOTH_STONE"
+    amount: 130
+    text: "Vypal 130× hladký kámen"
+    icon: SMOOTH_STONE
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '56':
+    name: "Zlato trpaslíků II"
+    level: 1
+    action: BREAK_BLOCK
+    target: "NETHERRACK"
+    amount: 500
+    text: "Vytěž 500× netherrack"
+    icon: NETHERRACK
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '57':
+    name: "Píseň polí III"
+    level: 2
+    action: HARVEST
+    target: "NETHER_WART"
+    amount: 150
+    text: "Sklid 150× netherovou bradavici"
+    icon: NETHER_WART
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '58':
+    name: "Srdce hory II"
+    level: 4
+    action: BREAK_BLOCK
+    target: "IRON_ORE,DEEPSLATE_IRON_ORE"
+    amount: 110
+    text: "Vytěž 110× železnou rudu"
+    icon: IRON_ORE
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '59':
+    name: "Dech hlubin II"
+    level: 8
+    action: BREAK_BLOCK
+    target: "STONE"
+    amount: 3450
+    text: "Vytěž 3450× kámen"
+    icon: STONE
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '60':
+    name: "Pastýřova přízeň III"
+    level: 7
+    action: BREED
+    target: "PIG"
+    amount: 80
+    text: "Rozmnož 80× prase"
+    icon: CARROT
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '61':
+    name: "Temné štoly III"
+    level: 7
+    action: BREAK_BLOCK
+    target: "NETHER_QUARTZ_ORE"
+    amount: 400
+    text: "Vytěž 400× netherový křemen"
+    icon: NETHER_QUARTZ_ORE
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '62':
+    name: "Žíla věčnosti VI"
+    level: 7
+    action: BREAK_BLOCK
+    target: "CLAY"
+    amount: 260
+    text: "Vytěž 260× jíl"
+    icon: CLAY
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '63':
+    name: "Dílna Prastarých III"
+    level: 8
+    action: CRAFT
+    target: "GOLDEN_APPLE"
+    amount: 25
+    text: "Vyrob 25× zlaté jablko"
+    icon: GOLDEN_APPLE
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '64':
+    name: "Srdce hory III"
+    level: 2
+    action: BREAK_BLOCK
+    target: "DEEPSLATE"
+    amount: 450
+    text: "Vytěž 450× hlubinnou břidlici"
+    icon: DEEPSLATE
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '65':
+    name: "Krvavá přísaha II"
+    level: 5
+    action: KILL_MOB
+    target: "PIGLIN,ZOMBIFIED_PIGLIN"
+    amount: 95
+    text: "Zabij 95× piglina"
+    icon: GOLD_NUGGET
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '66':
+    name: "Hojnost stáda II"
+    level: 4
+    action: BREED
+    target: "SHEEP"
+    amount: 35
+    text: "Rozmnož 35× ovci"
+    icon: WHITE_WOOL
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '67':
+    name: "Žár tavicí pece III"
+    level: 9
+    action: SMELT
+    target: "COPPER_INGOT"
+    amount: 720
+    text: "Přetav 720× měděný ingot"
+    icon: COPPER_INGOT
+    time-minutes: 128
+    gems: 660
+    money: 4500
+  '68':
+    name: "Hon na bestie II"
+    level: 5
+    action: KILL_MOB
+    target: "SHULKER"
+    amount: 30
+    text: "Zabij 30× shulkera"
+    icon: SHULKER_SHELL
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '69':
+    name: "Píseň polí IV"
+    level: 1
+    action: HARVEST
+    target: "COCOA"
+    amount: 60
+    text: "Sklid 60× kakaové boby"
+    icon: COCOA_BEANS
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '70':
+    name: "Plamen výhně III"
+    level: 6
+    action: SMELT
+    target: "IRON_INGOT"
+    amount: 320
+    text: "Přetav 320× železný ingot"
+    icon: IRON_INGOT
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '71':
+    name: "Rybářova legenda"
+    level: 3
+    action: FISH
+    target: "TROPICAL_FISH"
+    amount: 12
+    text: "Chyť 12× tropickou rybu"
+    icon: TROPICAL_FISH
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '72':
+    name: "Krvavá přísaha III"
+    level: 7
+    action: KILL_MOB
+    target: "PHANTOM"
+    amount: 65
+    text: "Zabij 65× fantoma"
+    icon: PHANTOM_MEMBRANE
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '73':
+    name: "Mistrovo dílo IV"
+    level: 2
+    action: CRAFT
+    target: "IRON_BLOCK"
+    amount: 9
+    text: "Vyrob 9× železný blok"
+    icon: IRON_BLOCK
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '74':
+    name: "Zlato trpaslíků III"
+    level: 9
+    action: BREAK_BLOCK
+    target: "GOLD_ORE,DEEPSLATE_GOLD_ORE,NETHER_GOLD_ORE"
+    amount: 220
+    text: "Vytěž 220× zlatou rudu"
+    icon: GOLD_ORE
+    time-minutes: 128
+    gems: 660
+    money: 4500
+  '75':
+    name: "Mistrovo dílo V"
+    level: 2
+    action: CRAFT
+    target: "ARROW"
+    amount: 95
+    text: "Vyrob 95× šíp"
+    icon: ARROW
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '76':
+    name: "Zlatá žeň III"
+    level: 9
+    action: HARVEST
+    target: "WHEAT"
+    amount: 1700
+    text: "Sklid 1700× pšenici"
+    icon: WHEAT
+    time-minutes: 128
+    gems: 660
+    money: 4500
+  '77':
+    name: "Požehnání sklizně II"
+    level: 1
+    action: HARVEST
+    target: "CARROTS"
+    amount: 150
+    text: "Sklid 150× mrkev"
+    icon: CARROT
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '78':
+    name: "Ozvěna krumpáče"
+    level: 2
+    action: BREAK_BLOCK
+    target: "DIAMOND_ORE,DEEPSLATE_DIAMOND_ORE"
+    amount: 9
+    text: "Vytěž 9× diamantovou rudu"
+    icon: DIAMOND_ORE
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '79':
+    name: "Píseň vln II"
+    level: 8
+    action: FISH
+    target: "ANY"
+    amount: 340
+    text: "Chyť 340× cokoli na udici"
+    icon: FISHING_ROD
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '80':
+    name: "Pád temnoty II"
+    level: 6
+    action: KILL_MOB
+    target: "HUSK,STRAY"
+    amount: 120
+    text: "Zabij 120× huska nebo straye"
+    icon: SAND
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '81':
+    name: "Lov ve stínech IV"
+    level: 3
+    action: KILL_MOB
+    target: "SPIDER,CAVE_SPIDER"
+    amount: 60
+    text: "Zabij 60× pavouka"
+    icon: SPIDER_EYE
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '82':
+    name: "Dech hlubin III"
+    level: 8
+    action: BREAK_BLOCK
+    target: "BLACKSTONE"
+    amount: 1300
+    text: "Vytěž 1300× černý kámen"
+    icon: BLACKSTONE
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '83':
+    name: "Plamen výhně IV"
+    level: 6
+    action: SMELT
+    target: "NETHERITE_SCRAP"
+    amount: 10
+    text: "Přetav 10× netheritový úlomek"
+    icon: NETHERITE_SCRAP
+    time-minutes: 92
+    gems: 300
+    money: 3000
+  '84':
+    name: "Krvavá přísaha IV"
+    level: 1
+    action: KILL_MOB
+    target: "SLIME"
+    amount: 20
+    text: "Zabij 20× slima"
+    icon: SLIME_BALL
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '85':
+    name: "Zapomenuté žíly II"
+    level: 1
+    action: BREAK_BLOCK
+    target: "ANCIENT_DEBRIS"
+    amount: 2
+    text: "Vytěž 2× prastarou trosku"
+    icon: ANCIENT_DEBRIS
+    time-minutes: 32
+    gems: 20
+    money: 500
+  '86':
+    name: "Kovářova zkouška"
+    level: 8
+    action: CRAFT
+    target: "BREAD"
+    amount: 280
+    text: "Vyrob 280× chleba"
+    icon: BREAD
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '87':
+    name: "Hon na bestie III"
+    level: 9
+    action: KILL_MOB
+    target: "ENDERMAN"
+    amount: 220
+    text: "Zabij 220× endermana"
+    icon: ENDER_PEARL
+    time-minutes: 128
+    gems: 660
+    money: 4500
+  '88':
+    name: "Prokletý důl III"
+    level: 7
+    action: BREAK_BLOCK
+    target: "SCULK"
+    amount: 260
+    text: "Vytěž 260× sculk"
+    icon: SCULK
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '89':
+    name: "Zlato trpaslíků IV"
+    level: 5
+    action: BREAK_BLOCK
+    target: "OBSIDIAN"
+    amount: 60
+    text: "Vytěž 60× obsidián"
+    icon: OBSIDIAN
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '90':
+    name: "Pastýřova přízeň IV"
+    level: 8
+    action: BREED
+    target: "COW,MOOSHROOM"
+    amount: 110
+    text: "Rozmnož 110× krávu"
+    icon: WHEAT
+    time-minutes: 116
+    gems: 524
+    money: 4000
+  '91':
+    name: "Šepot magie"
+    level: 7
+    action: ENCHANT
+    target: "ANY"
+    amount: 25
+    text: "Očaruj 25× předmět"
+    icon: ENCHANTING_TABLE
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '92':
+    name: "Kámen a oheň"
+    level: 5
+    action: BREAK_BLOCK
+    target: "AMETHYST_CLUSTER"
+    amount: 40
+    text: "Sesbírej 40× ametystový krystal"
+    icon: AMETHYST_CLUSTER
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '93':
+    name: "Přísaha lovce IV"
+    level: 5
+    action: KILL_MOB
+    target: "WITHER_SKELETON"
+    amount: 40
+    text: "Zabij 40× wither kostlivce"
+    icon: WITHER_SKELETON_SKULL
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '94':
+    name: "Dary země II"
+    level: 2
+    action: HARVEST
+    target: "MELON"
+    amount: 90
+    text: "Sklid 90× meloun"
+    icon: MELON
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '95':
+    name: "Klid jezera II"
+    level: 5
+    action: FISH
+    target: "PUFFERFISH"
+    amount: 25
+    text: "Chyť 25× čtverzubce"
+    icon: PUFFERFISH
+    time-minutes: 80
+    gems: 212
+    money: 2500
+  '96':
+    name: "Pád temnoty III"
+    level: 7
+    action: KILL_MOB
+    target: "GHAST"
+    amount: 35
+    text: "Zabij 35× ghasta"
+    icon: GHAST_TEAR
+    time-minutes: 104
+    gems: 404
+    money: 3500
+  '97':
+    name: "Lov ve stínech V"
+    level: 2
+    action: KILL_MOB
+    target: "ZOMBIE"
+    amount: 60
+    text: "Zabij 60× zombie"
+    icon: ROTTEN_FLESH
+    time-minutes: 44
+    gems: 44
+    money: 1000
+  '98':
+    name: "Přísaha lovce V"
+    level: 3
+    action: KILL_MOB
+    target: "CREEPER"
+    amount: 50
+    text: "Zabij 50× creepera"
+    icon: GUNPOWDER
+    time-minutes: 56
+    gems: 84
+    money: 1500
+  '99':
+    name: "Píseň polí V"
+    level: 4
+    action: HARVEST
+    target: "POTATOES"
+    amount: 420
+    text: "Sklid 420× brambory"
+    icon: POTATO
+    time-minutes: 68
+    gems: 140
+    money: 2000
+  '100':
+    name: "Strážce hranic III"
+    level: 9
+    action: KILL_MOB
+    target: "HOGLIN"
+    amount: 110
+    text: "Zabij 110× hoglina"
+    icon: COOKED_PORKCHOP
+    time-minutes: 128
+    gems: 660
+    money: 4500

@@ -1,0 +1,47 @@
+# ============================================================
+#  Výpravy Prastarých – prémiové časované questy
+# ============================================================
+# Odemknou se po splnění "unlock-quests" běžných questů (QuestCore).
+unlock-quests: 1000
+# Placeholder s počtem splněných questů.
+completed-placeholder: "%questcore_completed%"
+
+# Kolik výprav může mít hráč rozjetých najednou.
+max-active: 1
+
+# Čas běží jen když je hráč na serveru (true), nebo pořád – i offline (false).
+time-online-only: true
+
+# Moby ze spawnerů se nepočítají (proti farmám).
+count-spawner-mobs: false
+
+# Odměny – příkazy z konzole. %player% = jméno, %amount% = počet.
+reward-gems-command: "gems give %player% %amount%"
+reward-money-command: "eco give %player% %amount%"
+
+# Odměna za dokončení VŠECH výprav (jednorázově).
+all-done-commands:
+  - "gems give %player% 5000"
+  - "broadcast &#C084FC&l✦ %player% &fdokončil všech 100 Výprav Prastarých! &#C084FC&l✦"
+
+# Bossbar s časem a postupem aktivní výpravy.
+bossbar: true
+
+# Zvuky (klíče z Minecraftu, prázdné = bez zvuku).
+sounds:
+  accept: "item.totem.use"
+  progress: "block.note_block.chime"
+  complete: "ui.toast.challenge_complete"
+  fail: "entity.wither.death"
+
+messages:
+  prefix: "&#C084FC&l✦ &#8B5CF6Výpravy &8» &7"
+  locked: "Výpravy Prastarých se odemknou po &f%need% &7splněných questech. Máš &f%have%&7."
+  unlocked-now: "&#C084FC&lOdemkl jsi Výpravy Prastarých! &7Otevři je příkazem &f/vypravy&7."
+  accepted: "Vydal ses na výpravu &f%name%&7. Máš &f%time% &7na splnění."
+  already-active: "Už máš rozjetou výpravu. Nejdřív ji dokonči nebo zruš (pravým kliknutím)."
+  already-done: "Tuhle výpravu už máš splněnou."
+  cancelled: "Výprava &f%name% &7zrušena – postup se vynuloval."
+  completed: "&a&lVýprava splněna! &f%name% &7– odměna &#5BC8FF%gems% gemů&7."
+  failed: "&c&lČas vypršel! &7Výprava &f%name% &7se vynulovala. Zkus to znovu."
+  reloaded: "Konfigurace a výpravy načteny."

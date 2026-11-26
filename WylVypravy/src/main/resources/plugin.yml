@@ -1,0 +1,16 @@
+name: WylVypravy
+version: '${project.version}'
+main: cz.wylvarion.vypravy.WylVypravy
+api-version: '1.21'
+author: Wylvarion
+description: Výpravy Prastarých – prémiové časované questy po 1000 splněných questech.
+depend: [PlaceholderAPI]
+commands:
+  vypravy:
+    description: Otevře Výpravy Prastarých.
+    aliases: [vyprava, prastari, premiumquesty]
+permissions:
+  wylvypravy.use:
+    default: true
+  wylvypravy.admin:
+    default: op
