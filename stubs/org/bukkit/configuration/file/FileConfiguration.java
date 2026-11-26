@@ -1,0 +1,1 @@
+package org.bukkit.configuration.file; public class FileConfiguration { public String getString(String p, String d){return null;} public int getInt(String p, int d){return 0;} public void set(String p, Object v){} }

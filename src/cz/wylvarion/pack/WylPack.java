@@ -8,6 +8,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -63,6 +65,8 @@ public final class WylPack extends JavaPlugin implements Listener {
     }
 
     private final Set<UUID> withPack = ConcurrentHashMap.newKeySet();
+    /** hráči připojení z launcheru (pack mají nainstalovaný v hře, pack od serveru hra odmítne) */
+    private final Set<UUID> launcher = ConcurrentHashMap.newKeySet();
     private File store;
 
     @Override
@@ -113,11 +117,30 @@ public final class WylPack extends JavaPlugin implements Listener {
         if (changed) save();
     }
 
+    /** Launcher se připojuje na adresu s velkým písmenem (Play.wylvarion.cz) – podle toho ho poznáme. */
+    @EventHandler
+    public void onLogin(PlayerLoginEvent e) {
+        String host = e.getHostname();
+        if (host == null) return;
+        int c = host.indexOf(':');
+        String h = c >= 0 ? host.substring(0, c) : host;
+        UUID id = e.getPlayer().getUniqueId();
+        if (!h.equals(h.toLowerCase(Locale.ROOT))) {
+            launcher.add(id);
+            getLogger().info(e.getPlayer().getName() + " přišel z launcheru (" + h + ").");
+        } else {
+            launcher.remove(id);
+        }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent e) { launcher.remove(e.getPlayer().getUniqueId()); }
+
     private boolean hasPack(OfflinePlayer p) {
         if (p == null) return false;
         UUID id = p.getUniqueId();
         if (id.toString().startsWith("00000000-0000-0000")) return false; // Bedrock (Floodgate)
-        return withPack.contains(id);
+        return launcher.contains(id) || withPack.contains(id);
     }
 
     /** Prefix z LuckPerms (MiniMessage s &lt;lang:KLÍČ&gt;) -> obrázek, nebo beze změny (TAB z něj udělá barevný text). */
