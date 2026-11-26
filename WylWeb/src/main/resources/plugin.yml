@@ -1,0 +1,11 @@
+name: WylWeb
+version: '${project.version}'
+main: cz.wylvarion.web.WylWeb
+api-version: '1.21'
+author: Wylvarion
+description: Propojení serveru s webem wylvarion.cz (profily hráčů, Síň slávy, přihlášení)
+softdepend: [Vault, AuthMe, PlaceholderAPI]
+commands:
+  web:
+    description: Kód pro přihlášení na web wylvarion.cz
+    aliases: [webkod, wkod]

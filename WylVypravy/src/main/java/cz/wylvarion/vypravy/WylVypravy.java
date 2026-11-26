@@ -746,6 +746,7 @@ public final class WylVypravy extends JavaPlugin implements Listener {
                 case "completed" -> String.valueOf(d.completed.size());
                 case "total" -> String.valueOf(perRound);
                 case "round" -> String.valueOf(d.round);
+                case "done_total" -> String.valueOf((d.round - 1) * perRound + d.completed.size());
                 case "active" -> q == null ? "" : q.name();
                 case "active_progress" -> q == null ? "" : d.progress + "/" + q.amount();
                 case "active_time" -> q == null ? "" : time(remainingSec(d));

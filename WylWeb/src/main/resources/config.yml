@@ -1,0 +1,8 @@
+# WylWeb – propojení serveru s webem wylvarion.cz
+url: https://wylvarion.cz/api/mc-sync.php
+# Musí být stejné jako WYL_SYNC_SECRET na webu (api/mc-sync-config.php). Nikomu neposílej.
+secret: ""
+# Jak často posílat statistiky online hráčů (sekundy)
+interval-seconds: 300
+# Jak často se ptát webu na přihlášení heslem (sekundy)
+poll-seconds: 3
