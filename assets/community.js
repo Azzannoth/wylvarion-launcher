@@ -31,11 +31,43 @@
   const hydrate = (el) => { try { if (typeof hydrateMcIcons === 'function') hydrateMcIcons(el); } catch (e) { /* ikony nejsou nutné */ } };
   const setHash = (h) => { if (history.replaceState) history.replaceState(null, '', h); };
 
+  /* =================== ODZNAKY =================== */
+  const RAR = { l: 'Legendární', e: 'Epický', r: 'Vzácný', c: 'Běžný' };
+  const bdgMini = (p) => (p.bt && p.bt.length ? `<span class="bd-mini">${p.bt.map((b) => `<i class="bd-r-${b.r}" title="${esc(b.name)} · ${RAR[b.r]}">${b.icon}</i>`).join('')}${p.bc > p.bt.length ? `<em>+${p.bc - p.bt.length}</em>` : ''}</span>` : '');
+  const pct = (b) => (b.p ? Math.min(100, Math.round((b.p[0] / b.p[1]) * 100)) : 0);
+  const fmtP = (b) => (b.p ? `${num(Math.floor(b.p[0]))} / ${num(b.p[1])}` : '');
+  function badgeCard(b) {
+    return `<div class="pf-badge bd-r-${b.r}${b.has ? ' is-on' : ''}" title="${esc(b.desc)}">
+      <span class="bd-ic">${b.icon}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small>
+      <i class="bd-rar">${RAR[b.r]}</i>
+      ${!b.has && b.p ? `<span class="bd-bar"><span style="width:${pct(b)}%"></span></span><em class="bd-num">${fmtP(b)}</em>` : ''}
+      ${!b.has && !b.p ? '<em class="bd-num">🔒 Zamčeno</em>' : ''}
+    </div>`;
+  }
+  function badgeSection(p) {
+    const rank = { l: 4, e: 3, r: 2, c: 1 };
+    const list = [...p.badges].sort((a, b) => (b.has - a.has) || (a.has ? rank[b.r] - rank[a.r] : pct(b) - pct(a)));
+    const got = p.badges.filter((b) => b.has);
+    const per = ['l', 'e', 'r', 'c'].map((r) => `<span class="bd-cnt bd-r-${r}"><b>${got.filter((b) => b.r === r).length}</b>/${p.badges.filter((b) => b.r === r).length} ${RAR[r]}</span>`).join('');
+    const next = p.badges.filter((b) => !b.has && b.p).sort((a, b) => pct(b) - pct(a)).slice(0, 3);
+    return `<div class="bd-wrap" id="pfBadges">
+      <div class="bd-head">
+        <div><h4 class="pf-h">🏅 Odznaky <em>${got.length} / ${p.badges.length}</em></h4>
+        <div class="bd-total"><span style="width:${Math.round((got.length / p.badges.length) * 100)}%"></span></div>
+        <div class="bd-cnts">${per}</div></div>
+        <div class="bd-filter">${[['all', 'Vše'], ['on', 'Získané'], ['off', 'Chybí']].map(([k, l], i) => `<button type="button" class="wq-chip${i ? '' : ' is-active'}" data-bdf="${k}">${l}</button>`).join('')}</div>
+      </div>
+      ${next.length ? `<div class="bd-next"><small>Nejblíž k dalšímu odznaku:</small>${next.map((b) => `<span class="bd-r-${b.r}"><i>${b.icon}</i><b>${esc(b.name)}</b><span class="bd-bar"><span style="width:${pct(b)}%"></span></span><em>${pct(b)} %</em></span>`).join('')}</div>` : ''}
+      <div class="pf-badges">${list.map(badgeCard).join('')}</div>
+    </div>`;
+  }
+
   /* =================== HRÁČI =================== */
   const playerRow = (p, extra) => `
     <button type="button" class="cm-player" data-hr="${esc(p.name)}">
       <span class="cm-head"><img src="${head(p.name, 64)}" alt="" loading="lazy">${p.online ? '<i class="cm-dot" title="Online"></i>' : ''}</span>
       <span class="cm-pmain"><b>${esc(p.name)}</b><small>${extra(p)}</small></span>
+      ${bdgMini(p)}
     </button>`;
   async function hrHome() {
     const box = $('#hrHome');
@@ -117,8 +149,8 @@
       card('📜', 'Splněné questy', s.quests != null ? num(s.quests) : '–', s.qrank ? `rank ${esc(s.qrank.toUpperCase())}` : ''),
       card('✦', 'Výpravy Prastarých', s.vyp != null ? num(s.vyp) : '–', (s.quests || 0) >= 1000 ? 'odemčeno' : 'odemkne se po 1000 questech'),
     ].join('') : `<div class="cm-empty small" style="grid-column:1/-1">Statistiky tohoto hráče zatím nemáme.</div>`;
-    const badges = p.badges.map((b) => `<div class="pf-badge${b.has ? ' is-on' : ''}" title="${esc(b.desc)}"><span>${b.icon}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join('');
     const got = p.badges.filter((b) => b.has).length;
+    const show = (p.showcase || []).length ? `<button type="button" class="bd-show" data-bd-jump title="Zobrazit všechny odznaky">${p.showcase.map((b) => `<span class="bd-r-${b.r}" title="${esc(b.name)} · ${RAR[b.r]}"><i>${b.icon}</i><b>${esc(b.name)}</b></span>`).join('')}<em>${got} odznaků →</em></button>` : '';
     $('#hrProfile').innerHTML = `
       <button type="button" class="wiki-back-btn" data-hr-back>← Zpět na hráče</button>
       <div class="pf-hero">
@@ -131,6 +163,7 @@
             <span class="pf-tag st-${state[0]}">${state[1]}</span>
           </div>
           <h3 class="pf-name">${esc(p.name)}</h3>
+          ${show}
           ${p.bio ? `<p class="pf-bio">„${esc(p.bio)}“</p>` : (p.own ? '<p class="pf-bio muted">Zatím nemáš žádné bio. Napiš něco o sobě!</p>' : '')}
           <div class="pf-actions">
             ${p.own ? '<button type="button" class="wb-btn" data-pf-edit>Upravit profil</button>' : ''}
@@ -139,10 +172,9 @@
           </div>
         </div>
       </div>
+      ${badgeSection(p)}
       <h4 class="pf-h">Statistiky</h4>
       <div class="pf-stats">${stats}</div>
-      <h4 class="pf-h">Odznaky <em>${got} / ${p.badges.length}</em></h4>
-      <div class="pf-badges">${badges}</div>
       ${!p.own ? '<p class="cm-note">Je to tvůj profil? <button type="button" class="linkish" data-open-mclogin>Přihlas se Minecraft účtem</button> a můžeš si napsat bio a vybrat rámeček.</p>' : ''}
       <div class="wp-overlay" id="pfEdit" hidden><div class="wp-modal pf-edit">
         <button class="wp-close" type="button" data-pf-close aria-label="Zavřít">×</button>
@@ -156,6 +188,12 @@
     const box = $('#hrProfile');
     box.querySelectorAll('[data-frame]').forEach((b) => b.addEventListener('click', () => {
       box.querySelectorAll('[data-frame]').forEach((x) => x.classList.toggle('is-sel', x === b));
+    }));
+    box.querySelector('[data-bd-jump]')?.addEventListener('click', () => $('#pfBadges')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    box.querySelectorAll('[data-bdf]').forEach((btn) => btn.addEventListener('click', () => {
+      box.querySelectorAll('[data-bdf]').forEach((x) => x.classList.toggle('is-active', x === btn));
+      const f = btn.dataset.bdf;
+      box.querySelectorAll('.pf-badges .pf-badge').forEach((c) => { c.hidden = f === 'on' ? !c.classList.contains('is-on') : f === 'off' ? c.classList.contains('is-on') : false; });
     }));
     box.querySelector('[data-pf-edit]')?.addEventListener('click', () => { $('#pfEdit').hidden = false; });
     box.querySelector('[data-pf-close]')?.addEventListener('click', () => { $('#pfEdit').hidden = true; });
@@ -185,6 +223,7 @@
     { id: 'mobs', label: '🐉 Zabití mobů', fmt: (v) => `${num(v)} mobů`, title: 'Největší lovci' },
     { id: 'fish', label: '🎣 Rybaření', fmt: (v) => `${num(v)} ryb`, title: 'Nejlepší rybáři' },
     { id: 'quests', label: '📜 Questy', fmt: (v) => `${num(v)} questů`, title: 'Nejvíc splněných questů' },
+    { id: 'badges', label: '🏅 Odznaky', fmt: (v) => `${num(v)} odznaků`, title: 'Největší sběratelé odznaků' },
     { id: 'vyp', label: '✦ Výpravy', fmt: (v) => `${num(v)} výprav`, title: 'Nejvíc splněných Výprav Prastarých' },
   ];
   let slCur = 'play';
@@ -207,10 +246,10 @@
         <div class="sl-podium">${order.map((i) => { const r = top3[i]; return `
           <button type="button" class="sl-pod p${i + 1}" data-hr="${esc(r.name)}">
             <img src="https://mc-heads.net/body/${encodeURIComponent(r.name)}/150" alt="" loading="lazy">
-            <span class="sl-place">${i + 1}</span><b>${esc(r.name)}</b><small>${def.fmt(r.value)}</small>
+            <span class="sl-place">${i + 1}</span><b>${esc(r.name)}</b><small>${def.fmt(r.value)}</small>${r.bt ? bdgMini({ bt: r.bt.slice(0, 3), bc: r.value }) : ''}
           </button>`; }).join('')}</div>
         <div class="sl-list">${d.top.slice(3).map((r, k) => `
-          <button type="button" class="sl-row" data-hr="${esc(r.name)}"><span class="sl-n">${k + 4}</span><img src="${head(r.name, 48)}" alt="" loading="lazy"><b>${esc(r.name)}</b>${r.online ? '<i class="cm-dot"></i>' : ''}<em>${def.fmt(r.value)}</em></button>`).join('')}</div>`;
+          <button type="button" class="sl-row" data-hr="${esc(r.name)}"><span class="sl-n">${k + 4}</span><img src="${head(r.name, 48)}" alt="" loading="lazy"><b>${esc(r.name)}</b>${r.online ? '<i class="cm-dot"></i>' : ''}${r.bt ? bdgMini({ bt: r.bt, bc: r.value }) : ''}<em>${def.fmt(r.value)}</em></button>`).join('')}</div>`;
     } catch (e) {
       box.innerHTML = '<div class="cm-empty">Žebříček se teď nepodařilo načíst.</div>';
     }

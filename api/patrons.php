@@ -47,6 +47,13 @@ try {
         // částky jednotlivců se ven neposílají – jen pořadí a úroveň
         $top[] = ['name' => (string) $r['nickname'], 'tier' => pt_tier($t)];
     }
+    // úrovně si pamatujeme pro odznaky na profilech hráčů (api/players.php)
+    try {
+        require_once __DIR__ . '/_store.php';
+        $tiers = [];
+        foreach ($top as $row) if ($row['tier']) $tiers[strtolower($row['name'])] = $row['tier'];
+        if ($tiers != store_load('patrontiers')) store_save('patrontiers', $tiers);
+    } catch (Throwable $e) { /* jen doplněk */ }
 
     $st = $pdo->prepare("SELECT nickname, COUNT(*) AS purchases, $sum AS total FROM orders
         WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01 00:00:00') GROUP BY nickname ORDER BY total DESC LIMIT 10");

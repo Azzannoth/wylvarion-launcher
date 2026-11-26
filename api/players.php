@@ -3,7 +3,7 @@
    GET q=nick            → našeptávač
    GET home=1            → online, naposledy aktivní, noví hráči
    GET nick=Nick         → profil
-   GET top=play|money|kills|mobs|votes|fish|quests|vyp → žebříček TOP 10
+   GET top=play|money|kills|mobs|votes|fish|quests|vyp|badges → žebříček TOP 10
    POST {bio, frame}     → úprava vlastního profilu (jen po přihlášení Minecraft účtem) */
 require __DIR__ . '/auth-lib.php';
 require_once __DIR__ . '/config.php';
@@ -16,30 +16,124 @@ const FRAMES = [
     'legend'  => ['Legenda', 'hours1000'],
     'sponsor' => ['Sponzor', 'sponsor'],
     'team'    => ['Admin Team', 'team'],
+    'patron'  => ['Patron', 'patron'],
+    'collector' => ['Sběratel', 'collector'],
+    'mythic'  => ['Mýtus', 'quest2500'],
 ];
+// [název, popis, ikona, vzácnost c/r/e/l]
 const BADGES = [
-    'team'      => ['Admin Team', 'Člen admin teamu Wylvarionu', '🛡️'],
-    'sponsor'   => ['Sponzor', 'Podporuje server jako sponzor', '💎'],
-    'veteran'   => ['Veterán', 'Na serveru déle než rok', '🏰'],
-    'hours10'   => ['Nováček', 'Odehráno 10 hodin', '🌱'],
-    'hours100'  => ['Stálice', 'Odehráno 100 hodin', '⏳'],
-    'hours500'  => ['Legenda', 'Odehráno 500 hodin', '🔥'],
-    'hours1000' => ['Nesmrtelný', 'Odehráno 1000 hodin', '👑'],
-    'voter'     => ['Hlasující', 'Aspoň 50 hlasů pro server', '🗳️'],
-    'voter2'    => ['Věrný hlas', 'Aspoň 250 hlasů pro server', '📜'],
-    'fighter'   => ['Bojovník', 'Aspoň 100 zabitých hráčů', '⚔️'],
-    'hunter'    => ['Lovec', 'Aspoň 5000 zabitých mobů', '🏹'],
-    'fisher'    => ['Rybář', 'Aspoň 500 chycených ryb', '🎣'],
-    'traveler'  => ['Cestovatel', 'Nachozeno přes 1000 km', '🧭'],
-    'clean'     => ['Čistý štít', 'Přes 20 hodin hraní a žádný trest', '🕊️'],
-    'rich'      => ['Boháč', 'TOP 10 nejbohatších hráčů', '💰'],
-    'topplay'   => ['Nehasnoucí', 'TOP 10 v odehraném čase', '🏆'],
-    'quest100'  => ['Dobrodruh', 'Splněno 100 questů', '📜'],
-    'quest500'  => ['Hrdina', 'Splněno 500 questů', '🗡️'],
-    'quest1000' => ['Prastarý', 'Splněno 1000 questů – odemčené Výpravy Prastarých', '✦'],
-    'vyp1'      => ['Na výpravě', 'První splněná Výprava Prastarých', '🧭'],
-    'vyp100'    => ['Strážce věků', 'Dokončeno celé kolo (100) Výprav Prastarých', '🌌'],
+    'team'       => ['Admin Team', 'Člen admin teamu Wylvarionu', '🛡️', 'l'],
+    'plegend'    => ['Legendární patron', 'Podpořil server částkou 15 000 Kč a víc', '🌟', 'l'],
+    'pmecenas'   => ['Mecenáš', 'Podpořil server částkou 5 000 Kč a víc', '🏛️', 'e'],
+    'patron'     => ['Patron', 'Podpořil server částkou 1 000 Kč a víc', '🎗️', 'r'],
+    'sponsor'    => ['Sponzor', 'Podporuje server jako sponzor', '💎', 'e'],
+    'collector'  => ['Sběratel', 'Získáno aspoň 25 odznaků', '🏅', 'l'],
+    'allround'   => ['Všeuměl', '100 h hraní, 100 questů, 1000 mobů a 100 ryb', '🎭', 'e'],
+    'veteran2'   => ['Pradávný', 'Na serveru déle než 2 roky', '🗿', 'e'],
+    'veteran'    => ['Veterán', 'Na serveru déle než rok', '🏰', 'r'],
+    'hours10'    => ['Nováček', 'Odehráno 10 hodin', '🌱', 'c'],
+    'hours50'    => ['Usedlík', 'Odehráno 50 hodin', '🏡', 'c'],
+    'hours100'   => ['Stálice', 'Odehráno 100 hodin', '⏳', 'r'],
+    'hours250'   => ['Pilíř komunity', 'Odehráno 250 hodin', '🧱', 'r'],
+    'hours500'   => ['Legenda', 'Odehráno 500 hodin', '🔥', 'e'],
+    'hours1000'  => ['Nesmrtelný', 'Odehráno 1000 hodin', '👑', 'l'],
+    'voter0'     => ['První hlasy', 'Aspoň 10 hlasů pro server', '✉️', 'c'],
+    'voter'      => ['Hlasující', 'Aspoň 50 hlasů pro server', '🗳️', 'r'],
+    'voter2'     => ['Věrný hlas', 'Aspoň 250 hlasů pro server', '📜', 'e'],
+    'voter3'     => ['Hlas lidu', 'Aspoň 1000 hlasů pro server', '📯', 'l'],
+    'pvp10'      => ['Rváč', 'Aspoň 10 zabitých hráčů', '🥊', 'c'],
+    'fighter'    => ['Bojovník', 'Aspoň 100 zabitých hráčů', '⚔️', 'r'],
+    'warlord'    => ['Vojevůdce', 'Aspoň 500 zabitých hráčů', '🪖', 'e'],
+    'pvpgod'     => ['Krvavý pán', 'Aspoň 2000 zabitých hráčů', '🩸', 'l'],
+    'kd3'        => ['Nepřemožitelný', 'K/D aspoň 3 při 50+ zabitích', '🗡️', 'e'],
+    'phoenix'    => ['Fénix', 'Zemřel 250× a pořád se vrací', '🐦‍🔥', 'r'],
+    'mob500'     => ['Zabiják', 'Aspoň 500 zabitých mobů', '🔪', 'c'],
+    'hunter'     => ['Lovec', 'Aspoň 5000 zabitých mobů', '🏹', 'r'],
+    'slayer'     => ['Zhouba nestvůr', 'Aspoň 25 000 zabitých mobů', '🐲', 'e'],
+    'butcher'    => ['Kat bestií', 'Aspoň 100 000 zabitých mobů', '☠️', 'l'],
+    'fish50'     => ['Udičkář', 'Aspoň 50 chycených ryb', '🐟', 'c'],
+    'fisher'     => ['Rybář', 'Aspoň 500 chycených ryb', '🎣', 'r'],
+    'fish2500'   => ['Pán vod', 'Aspoň 2500 chycených ryb', '🐋', 'e'],
+    'walk100'    => ['Poutník', 'Nachozeno 100 km', '👣', 'c'],
+    'traveler'   => ['Cestovatel', 'Nachozeno 1000 km', '🧭', 'r'],
+    'walk5000'   => ['Zeměměřič', 'Nachozeno 5000 km', '🗺️', 'e'],
+    'walk20000'  => ['Obeplul svět', 'Nachozeno 20 000 km', '🌍', 'l'],
+    'money100k'  => ['Podnikatel', 'Aspoň 100 000 na účtu', '💵', 'r'],
+    'money1m'    => ['Milionář', 'Aspoň 1 000 000 na účtu', '🏦', 'e'],
+    'clean'      => ['Čistý štít', 'Přes 20 hodin hraní a žádný trest', '🕊️', 'r'],
+    'rich'       => ['Boháč', 'TOP 10 nejbohatších hráčů', '💰', 'e'],
+    'topplay'    => ['Nehasnoucí', 'TOP 10 v odehraném čase', '🏆', 'e'],
+    'topquest'   => ['Mistr úkolů', 'TOP 10 ve splněných questech', '🎖️', 'e'],
+    'topkill'    => ['Postrach arény', 'TOP 10 v zabitích hráčů', '🔱', 'e'],
+    'quest10'    => ['Učedník', 'Splněno 10 questů', '🪶', 'c'],
+    'quest100'   => ['Dobrodruh', 'Splněno 100 questů', '📗', 'c'],
+    'quest500'   => ['Hrdina', 'Splněno 500 questů', '🛡', 'r'],
+    'quest1000'  => ['Prastarý', 'Splněno 1000 questů – odemčené Výpravy Prastarých', '✦', 'e'],
+    'quest2500'  => ['Mýtus', 'Splněno 2500 questů', '🌠', 'l'],
+    'vyp1'       => ['Na výpravě', 'První splněná Výprava Prastarých', '🧳', 'r'],
+    'vyp25'      => ['Průzkumník věků', '25 splněných Výprav Prastarých', '🔮', 'e'],
+    'vyp100'     => ['Strážce věků', 'Dokončeno celé kolo (100) Výprav Prastarých', '🌌', 'l'],
 ];
+// odznaky za hodnotu: id => [pole, potřeba] (pole 'hours', 'km', 'votes' se počítají zvlášť)
+const BADGE_GOALS = [
+    'hours10' => ['hours', 10], 'hours50' => ['hours', 50], 'hours100' => ['hours', 100], 'hours250' => ['hours', 250], 'hours500' => ['hours', 500], 'hours1000' => ['hours', 1000],
+    'voter0' => ['votes', 10], 'voter' => ['votes', 50], 'voter2' => ['votes', 250], 'voter3' => ['votes', 1000],
+    'pvp10' => ['kills', 10], 'fighter' => ['kills', 100], 'warlord' => ['kills', 500], 'pvpgod' => ['kills', 2000],
+    'phoenix' => ['deaths', 250],
+    'mob500' => ['mobs', 500], 'hunter' => ['mobs', 5000], 'slayer' => ['mobs', 25000], 'butcher' => ['mobs', 100000],
+    'fish50' => ['fish', 50], 'fisher' => ['fish', 500], 'fish2500' => ['fish', 2500],
+    'walk100' => ['km', 100], 'traveler' => ['km', 1000], 'walk5000' => ['km', 5000], 'walk20000' => ['km', 20000],
+    'money100k' => ['money', 100000], 'money1m' => ['money', 1000000],
+    'quest10' => ['quests', 10], 'quest100' => ['quests', 100], 'quest500' => ['quests', 500], 'quest1000' => ['quests', 1000], 'quest2500' => ['quests', 2500],
+    'vyp1' => ['vyp', 1], 'vyp25' => ['vyp', 25], 'vyp100' => ['vyp', 100],
+];
+const BADGE_RANK = ['l' => 4, 'e' => 3, 'r' => 2, 'c' => 1];
+
+function pl_metric(?array $p, string $m, array $ctx): float {
+    if (!$p && $m !== 'votes') return 0;
+    if ($m === 'hours') return pl_hours($p);
+    if ($m === 'km') return ($p['walk'] ?? 0) / 100000;
+    if ($m === 'votes') return (float)($ctx['votes']['total'] ?? 0);
+    return (float)($p[$m] ?? 0);
+}
+/** Spočítá odznaky hráče. $ctx: team, sponsor, votes, pun, tier, tops (pole uuid -> [rich, topplay, ...]) */
+function pl_badges(?array $p, array $ctx): array {
+    $has = [];
+    if (!empty($ctx['team'])) $has[] = 'team';
+    if (!empty($ctx['sponsor'])) $has[] = 'sponsor';
+    $tier = $ctx['tier'] ?? null;
+    if ($tier === 'legend') $has[] = 'plegend';
+    if (in_array($tier, ['legend', 'mecenas'], true)) $has[] = 'pmecenas';
+    if ($tier) $has[] = 'patron';
+    if (!empty($p['first']) && $p['first'] < (time() - 365 * 86400) * 1000) $has[] = 'veteran';
+    if (!empty($p['first']) && $p['first'] < (time() - 730 * 86400) * 1000) $has[] = 'veteran2';
+    foreach (BADGE_GOALS as $id => [$m, $need]) if (pl_metric($p, $m, $ctx) >= $need) $has[] = $id;
+    $k = (float)($p['kills'] ?? 0);
+    if ($k >= 50 && $k / max(1, (float)($p['deaths'] ?? 0)) >= 3) $has[] = 'kd3';
+    if (isset($ctx['pun']) && pl_hours($p ?? []) >= 20 && ($ctx['pun']['total'] ?? 1) === 0) $has[] = 'clean';
+    foreach ($ctx['tops'] ?? [] as $id) $has[] = $id;
+    if (pl_hours($p ?? []) >= 100 && ($p['quests'] ?? 0) >= 100 && ($p['mobs'] ?? 0) >= 1000 && ($p['fish'] ?? 0) >= 100) $has[] = 'allround';
+    if (count($has) >= 25) $has[] = 'collector';
+    return array_values(array_unique($has));
+}
+function pl_badge_top(array $has, int $n = 3): array {
+    usort($has, fn($a, $b) => (BADGE_RANK[BADGES[$b][3]] <=> BADGE_RANK[BADGES[$a][3]]) ?: (array_search($a, array_keys(BADGES)) <=> array_search($b, array_keys(BADGES))));
+    return array_map(fn($id) => ['id' => $id, 'icon' => BADGES[$id][2], 'name' => BADGES[$id][0], 'r' => BADGES[$id][3]], array_slice($has, 0, $n));
+}
+/** TOP 10 odznaky (rich, topplay, topquest, topkill) pro všechny hráče najednou */
+function pl_tops(array $all): array {
+    $out = [];
+    foreach (['rich' => 'money', 'topplay' => 'play', 'topquest' => 'quests', 'topkill' => 'kills'] as $b => $f)
+        foreach (pl_top($all, $f) as $r) if (!empty($r['uuid'])) $out[$r['uuid']][] = $b;
+    return $out;
+}
+/** Odznaky jen z dat serveru (bez DB) – pro seznamy hráčů */
+function pl_quick_badges(array $p, array $tops, array $team, array $sponsors): array {
+    $k = strtolower($p['name']);
+    static $tiers = null;
+    if ($tiers === null) $tiers = store_load('patrontiers');
+    return pl_badges($p, ['team' => isset($team[$k]), 'sponsor' => isset($sponsors[$k]), 'tier' => $tiers[$k] ?? null, 'tops' => $tops[$p['uuid'] ?? ''] ?? []]);
+}
 
 function pl_all(): array { return store_load('players'); }
 function pl_find(array $all, string $nick): ?array {
@@ -80,8 +174,12 @@ function pl_online(): array {
     return array_map('strtolower', $s['online'] ?? []);
 }
 function pl_public(array $p, array $online): array {
+    static $ctx = null;
+    if ($ctx === null) $ctx = [pl_tops(pl_all()), pl_team(), pl_sponsors()];
+    $has = pl_quick_badges($p, ...$ctx);
     return ['name' => $p['name'], 'online' => in_array(strtolower($p['name']), $online, true),
-            'hours' => round(pl_hours($p), 1), 'first' => $p['first'] ?? null, 'last' => $p['last'] ?? null];
+            'hours' => round(pl_hours($p), 1), 'first' => $p['first'] ?? null, 'last' => $p['last'] ?? null,
+            'bc' => count($has), 'bt' => pl_badge_top($has)];
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -131,6 +229,14 @@ if (isset($_GET['top'])) {
             wyl_json(200, ['ok' => true, 'top' => array_map(fn($r) => ['name' => $r['name'], 'value' => (int)$r['v']], $rows)]);
         } catch (Throwable $e) { wyl_json(200, ['ok' => true, 'top' => []]); }
     }
+    if ($field === 'badges') {
+        $tops = pl_tops($all); $team = pl_team(); $sp = pl_sponsors();
+        $rows = [];
+        foreach ($all as $p) { $h = pl_quick_badges($p, $tops, $team, $sp); if ($h) $rows[] = [$p, $h]; }
+        usort($rows, fn($a, $b) => (count($b[1]) <=> count($a[1])) ?: (array_sum(array_map(fn($i) => BADGE_RANK[BADGES[$i][3]], $b[1])) <=> array_sum(array_map(fn($i) => BADGE_RANK[BADGES[$i][3]], $a[1]))));
+        wyl_json(200, ['ok' => true, 'connected' => count($all) > 0, 'top' => array_map(fn($r) => ['name' => $r[0]['name'], 'value' => count($r[1]), 'bt' => pl_badge_top($r[1], 5),
+            'online' => in_array(strtolower($r[0]['name']), $online, true)], array_slice($rows, 0, 10))]);
+    }
     if (!in_array($field, ['play', 'money', 'kills', 'mobs', 'fish', 'walk', 'quests', 'vyp'], true)) wyl_json(400, ['ok' => false]);
     $rows = pl_top($all, $field, 10);
     wyl_json(200, ['ok' => true, 'connected' => count($all) > 0, 'top' => array_map(fn($p) => ['name' => $p['name'], 'value' => $p[$field],
@@ -178,24 +284,13 @@ try {
 if (!$p && !$votes && !isset($team[$key])) wyl_json(404, ['ok' => false, 'error' => 'Hráč s tímhle nickem na Wylvarionu nehrál.']);
 
 $h = $p ? pl_hours($p) : 0;
-$has = [];
-if (isset($team[$key])) $has[] = 'team';
-if (isset($sponsors[$key])) $has[] = 'sponsor';
-if (!empty($p['first']) && $p['first'] < (time() - 365 * 86400) * 1000) $has[] = 'veteran';
-foreach ([10 => 'hours10', 100 => 'hours100', 500 => 'hours500', 1000 => 'hours1000'] as $lim => $b) if ($h >= $lim) $has[] = $b;
-if (($votes['total'] ?? 0) >= 50) $has[] = 'voter';
-if (($votes['total'] ?? 0) >= 250) $has[] = 'voter2';
-if (($p['kills'] ?? 0) >= 100) $has[] = 'fighter';
-if (($p['mobs'] ?? 0) >= 5000) $has[] = 'hunter';
-if (($p['fish'] ?? 0) >= 500) $has[] = 'fisher';
-if (($p['walk'] ?? 0) >= 100000000) $has[] = 'traveler';
-if ($h >= 20 && $pun['total'] === 0) $has[] = 'clean';
-foreach ([100 => 'quest100', 500 => 'quest500', 1000 => 'quest1000'] as $lim => $b) if (($p['quests'] ?? 0) >= $lim) $has[] = $b;
-if (($p['vyp'] ?? 0) >= 1) $has[] = 'vyp1';
-if (($p['vyp'] ?? 0) >= 100) $has[] = 'vyp100';
-if ($p && in_array($p['uuid'] ?? '', array_column(pl_top($all, 'money'), 'uuid'), true)) $has[] = 'rich';
-if ($p && in_array($p['uuid'] ?? '', array_column(pl_top($all, 'play'), 'uuid'), true)) $has[] = 'topplay';
-
+$tier = store_load('patrontiers')[$key] ?? null;
+$ctx = ['team' => isset($team[$key]), 'sponsor' => isset($sponsors[$key]), 'votes' => $votes, 'pun' => $pun, 'tier' => $tier,
+        'tops' => $p ? (pl_tops($all)[$p['uuid'] ?? ''] ?? []) : []];
+$has = pl_badges($p, $ctx);
+$goals = [];
+foreach (BADGE_GOALS as $id => [$m, $need]) $goals[$id] = [round(min(pl_metric($p, $m, $ctx), $need), 1), $need];
+$goals['collector'] = [min(count($has), 25), 25];
 $frames = [];
 foreach (FRAMES as $id => [$label, $need]) $frames[] = ['id' => $id, 'name' => $label, 'unlocked' => $need === null || in_array($need, $has, true)];
 $frame = $prof['frame'] ?? 'basic';
@@ -222,6 +317,8 @@ wyl_json(200, [
     'bio' => $prof['bio'] ?? '',
     'frame' => $frame,
     'frames' => $frames,
-    'badges' => array_map(fn($id) => ['id' => $id, 'name' => BADGES[$id][0], 'desc' => BADGES[$id][1], 'icon' => BADGES[$id][2], 'has' => in_array($id, $has, true)], array_keys(BADGES)),
+    'badges' => array_map(fn($id) => ['id' => $id, 'name' => BADGES[$id][0], 'desc' => BADGES[$id][1], 'icon' => BADGES[$id][2], 'r' => BADGES[$id][3],
+        'has' => in_array($id, $has, true), 'p' => $goals[$id] ?? null], array_keys(BADGES)),
+    'showcase' => pl_badge_top($has, 5),
     'own' => $own,
 ]);
