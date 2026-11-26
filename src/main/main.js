@@ -14,7 +14,7 @@ const mods = require('./core/mods');
 const java = require('./core/java');
 const { buildCommand, launch, redact } = require('./core/launch');
 const { ping } = require('./core/status');
-const { getJson } = require('./core/http');
+const { getJson, postJson } = require('./core/http');
 const { defaultRoot, layout } = require('./core/paths');
 const servers = require('./core/servers');
 const skins = require('./core/skins');
@@ -320,6 +320,12 @@ async function play() {
       }
     } catch (e) {
       send('notice', { key: 'notice.pack' });
+    }
+
+    // Server se dozví, že hráč má pack z launcheru (pack od serveru hra odmítne, takže by to jinak nepoznal)
+    // a v tabu / scoreboardu mu ukáže obrázky místo textu. Nevadí, když se to nepovede.
+    if (localPack) {
+      postJson(config.packReportUrl || 'https://wylvarion.cz/api/launcher-seen.php', { name: acc.name }, { timeout: 6000 }).catch(() => {});
     }
 
     // Server v seznamu serverů; pack od serveru přijmout jen když ho nemáme nainstalovaný sami (stáhne se sám, bez dotazu).
