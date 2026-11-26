@@ -141,6 +141,8 @@ public class WylWeb extends JavaPlugin implements Listener, CommandExecutor {
     }
 
     /** Questy (QuestCore) a Výpravy Prastarých přes PlaceholderAPI – jen co jde zjistit. */
+    private boolean papiWarned;
+
     private void papiStats(OfflinePlayer p, StringBuilder b) {
         try {
             int quests = papiInt(p, "%questcore_completed%");
@@ -149,8 +151,9 @@ public class WylWeb extends JavaPlugin implements Listener, CommandExecutor {
             if (rank.matches("[a-z_]{2,20}")) b.append(",\"qrank\":").append(q(rank));
             int vyp = papiInt(p, "%vypravy_done_total%");
             if (vyp >= 0) b.append(",\"vyp\":").append(vyp);
-        } catch (Throwable ignored) {
-            // placeholdery jsou jen doplněk
+        } catch (Throwable e) {
+            // placeholdery jsou jen doplněk – chybu vypíšeme jen jednou
+            if (!papiWarned) { papiWarned = true; getLogger().warning("Questy pro web nejdou načíst: " + e); }
         }
     }
 
