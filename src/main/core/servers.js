@@ -115,8 +115,16 @@ function ensureServer(gameDir, server, opts = {}) {
   if (!list.value.items.length) list.value.type = T.COMPOUND;
   const items = list.value.items;
 
-  let entry = items.find((s) => sameHost((get(s, 'ip') || {}).value, server.host, server.port));
   let changed = false;
+  // Úklid: záznamy s přímou adresou hostingu (přidané omylem) – server je jen play.wylvarion.cz.
+  for (let i = items.length - 1; i >= 0; i--) {
+    const v = String((get(items[i], 'ip') || {}).value || '').toLowerCase();
+    if (v.startsWith('chicken.hostify.cz')) {
+      items.splice(i, 1);
+      changed = true;
+    }
+  }
+  let entry = items.find((s) => sameHost((get(s, 'ip') || {}).value, server.host, server.port));
   if (!entry) {
     entry = [];
     set(entry, T.STRING, 'name', server.name || 'Wylvarion');
