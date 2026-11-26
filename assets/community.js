@@ -66,8 +66,7 @@
   const playerRow = (p, extra) => `
     <button type="button" class="cm-player" data-hr="${esc(p.name)}">
       <span class="cm-head"><img src="${head(p.name, 64)}" alt="" loading="lazy">${p.online ? '<i class="cm-dot" title="Online"></i>' : ''}</span>
-      <span class="cm-pmain"><b>${esc(p.name)}</b><small>${extra(p)}</small></span>
-      ${bdgMini(p)}
+      <span class="cm-pmain"><b>${esc(p.name)}</b><small>${extra(p)}</small>${bdgMini(p)}</span>
     </button>`;
   async function hrHome() {
     const box = $('#hrHome');
