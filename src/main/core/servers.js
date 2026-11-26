@@ -124,6 +124,12 @@ function ensureServer(gameDir, server, opts = {}) {
     items.unshift(entry);
     changed = true;
   }
+  // Adresu držíme přesně podle konfigurace (velikost písmen: podle ní server pozná hráče z launcheru).
+  const ip = get(entry, 'ip');
+  if (!ip || ip.value !== address) {
+    set(entry, T.STRING, 'ip', address);
+    changed = true;
+  }
   // Záznam, který si hra uložila při Quick Play, je skrytý – v seznamu serverů by nebyl vidět.
   const hiddenIdx = entry.findIndex((e) => e.name === 'hidden');
   if (hiddenIdx !== -1) {
