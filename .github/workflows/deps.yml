@@ -13,6 +13,14 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '21' }
       - run: mvn -B -q dependency:copy-dependencies -DoutputDirectory=/tmp/out
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '25' }
+      - name: Minimal JDK 25 (javac + jar)
+        run: |
+          jlink --add-modules java.base,java.compiler,jdk.compiler,jdk.jartool,jdk.zipfs,java.logging,java.xml,java.desktop,java.sql,java.naming,java.management,jdk.unsupported \
+                --strip-debug --no-header-files --no-man-pages --compress=zip-9 --output /tmp/jdk25
+          tar czf /tmp/out/jdk25-min.tgz -C /tmp jdk25
+          ls -l /tmp/out
       - run: |
           cd /tmp/out && ls
           git init -q -b deps && git config user.name wylvarion-bot && git config user.email bot@wylvarion.cz
