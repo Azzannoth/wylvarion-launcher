@@ -1,0 +1,7 @@
+name: WylPack
+version: 1.0.0
+main: cz.wylvarion.pack.WylPack
+api-version: '1.21'
+author: Wylvarion
+description: Obrázky ranků a ikon v TABu jen pro hráče s resource packem, ostatním text.
+depend: [PlaceholderAPI]
