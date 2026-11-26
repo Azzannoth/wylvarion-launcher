@@ -182,23 +182,4 @@ function installLocal(dirs, master) {
   return { changed: changed || !same };
 }
 
-/** Vypne dřív nainstalovaný pack serveru v options.txt (soubor nechá, nevadí). */
-function uninstallLocal(dirs) {
-  const optionsFile = path.join(dirs.game, 'options.txt');
-  let text;
-  try {
-    text = fs.readFileSync(optionsFile, 'utf8');
-  } catch {
-    return false;
-  }
-  const lines = text.split(/\r?\n/);
-  const idx = lines.findIndex((l) => l.startsWith('resourcePacks:'));
-  if (idx === -1) return false;
-  const packs = parseList(lines[idx].slice('resourcePacks:'.length));
-  if (!packs.includes(LOCAL_ID)) return false;
-  lines[idx] = `resourcePacks:${JSON.stringify(packs.filter((p) => p !== LOCAL_ID))}`;
-  fs.writeFileSync(optionsFile, lines.join('\n'));
-  return true;
-}
-
-module.exports = { prefetch, installLocal, uninstallLocal, nameUuid, learnIds, LOCAL_ID };
+module.exports = { prefetch, installLocal, nameUuid, learnIds, LOCAL_ID };
