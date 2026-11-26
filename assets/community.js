@@ -640,3 +640,123 @@
   if (document.readyState === 'complete') start(); else window.addEventListener('load', start);
   teamDecorate();
 })();
+
+/* =================== PATRONI (Sponzoring) =================== */
+(function () {
+  'use strict';
+  const API = (typeof CONFIG !== 'undefined' && CONFIG.apiBase) || 'api';
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const kc = (n) => `${Number(n || 0).toLocaleString('cs-CZ', { maximumFractionDigits: 0 })} Kč`;
+  const head = (n, s = 48) => `https://mc-heads.net/avatar/${encodeURIComponent(n)}/${s}`;
+  const body = (n, s = 150) => `https://mc-heads.net/body/${encodeURIComponent(n)}/${s}`;
+  const when = (t) => {
+    if (!t) return '';
+    const d = new Date(String(t).replace(' ', 'T'));
+    if (isNaN(d)) return '';
+    const s = (Date.now() - d.getTime()) / 1000;
+    const rtf = new Intl.RelativeTimeFormat('cs', { numeric: 'auto' });
+    if (s < 3600) return rtf.format(-Math.max(1, Math.round(s / 60)), 'minute');
+    if (s < 86400) return rtf.format(-Math.round(s / 3600), 'hour');
+    if (s < 86400 * 30) return rtf.format(-Math.round(s / 86400), 'day');
+    return d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' });
+  };
+  const MONTHS = ['leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'];
+  let data = null;
+  let tab = 'top';
+
+  const badge = (id) => {
+    const t = data.tiers.find((x) => x.id === id);
+    return t ? `<span class="pt-badge pt-${t.id}">${esc(t.name)}</span>` : '';
+  };
+  const podium = (list) => {
+    const top3 = list.slice(0, 3);
+    const order = [1, 0, 2].filter((i) => top3[i]);
+    return `<div class="sl-podium pt-podium">${order.map((i) => { const r = top3[i]; return `
+      <button type="button" class="sl-pod p${i + 1}" data-hr="${esc(r.name)}">
+        <img src="${body(r.name)}" alt="" loading="lazy">
+        <span class="sl-place">${i + 1}</span><b>${esc(r.name)}</b><small>Utraceno <em>${kc(r.total)}</em></small>
+        ${r.tier ? badge(r.tier) : ''}
+      </button>`; }).join('')}</div>`;
+  };
+  const rows = (list, from) => `<div class="sl-list">${list.map((r, k) => `
+    <button type="button" class="sl-row" data-hr="${esc(r.name)}"><span class="sl-n">${k + from}</span><img src="${head(r.name)}" alt="" loading="lazy"><b>${esc(r.name)}</b>${r.tier ? badge(r.tier) : ''}<em>${kc(r.total)}</em></button>`).join('')}</div>`;
+  const cards = (list) => `<div class="pt-grid">${list.map((r) => `
+    <button type="button" class="pt-card" data-hr="${esc(r.name)}"><img src="${head(r.name, 64)}" alt="" loading="lazy">
+      <span><b>${esc(r.name)}</b><small>${kc(r.total)} · ${r.purchases}× nákup</small></span></button>`).join('')}</div>`;
+
+  function renderTab() {
+    const box = document.getElementById('ptTab');
+    if (!box) return;
+    document.querySelectorAll('#patronsMount .pt-tab').forEach((b) => b.classList.toggle('is-active', b.dataset.pt === tab));
+    let html;
+    if (tab === 'top') {
+      html = data.top.length ? podium(data.top) + rows(data.top.slice(3, 20), 4) : '';
+    } else if (tab === 'month') {
+      html = data.month.length ? podium(data.month) + rows(data.month.slice(3), 4) : '';
+    } else {
+      const t = data.tiers.find((x) => x.id === tab);
+      const list = data.top.filter((r) => r.total >= t.min);
+      html = list.length ? `<p class="pt-lead">Hráči, kteří Wylvarion podpořili celkem částkou <b>${kc(t.min)}</b> a více.</p>${cards(list)}` : '';
+    }
+    box.innerHTML = html || `<div class="cm-empty"><b>Zatím tu nikdo není.</b><span>Buď první – podpoř server v <a href="#shop" data-tab-link="shop" class="linkish">obchodě</a>.</span></div>`;
+  }
+
+  function render() {
+    const box = document.getElementById('patronsMount');
+    const now = new Date();
+    const g = data.goal || {};
+    const pct = g.target ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
+    const best = data.month[0];
+    const tierTabs = data.tiers.slice().reverse().map((t) => `<button type="button" class="pt-tab" data-pt="${t.id}"><small>${esc(t.name)}</small>${kc(t.min)}+</button>`).join('');
+    box.innerHTML = `
+      <div class="pt-top">
+        ${g.target ? `<div class="pt-goal">
+          <div class="pt-goal-h"><b>Cíl serveru – ${MONTHS[now.getMonth()]}</b><span>${pct} %</span></div>
+          <div class="pt-goal-n">${kc(g.current)} <small>/ ${kc(g.target)}</small></div>
+          <div class="pt-bar"><i style="width:${pct}%"></i></div>
+          <p>Každá podpora jde na provoz serveru, nové pluginy a eventy.</p>
+        </div>` : ''}
+        <div class="pt-best">${best ? `
+          <img src="${body(best.name, 120)}" alt="" loading="lazy">
+          <div><small>Největší dárce měsíce</small><b data-hr="${esc(best.name)}" class="pt-best-n">${esc(best.name)}</b><span>Tento měsíc daroval nejvíc. Díky!</span></div>` :
+          `<div><small>Největší dárce měsíce</small><b>Zatím nikdo</b><span>Tento měsíc může být tvůj.</span></div>`}
+        </div>
+        <div class="pt-stats"><div><b>${data.stats.patrons}</b><small>patronů</small></div><div><b>${data.stats.purchases}</b><small>nákupů</small></div></div>
+      </div>
+      <div class="pt-tabs"><button type="button" class="pt-tab" data-pt="top"><small>Nejlepší</small>Patroni</button><button type="button" class="pt-tab" data-pt="month"><small>Tento</small>měsíc</button>${tierTabs}</div>
+      <div class="pt-body" id="ptTab"></div>
+      ${data.recent.length ? `<div class="pt-recent"><h4>Poslední podpora</h4><div class="pt-rlist">${data.recent.map((r) => `
+        <button type="button" class="pt-ritem" data-hr="${esc(r.name)}"><img src="${head(r.name, 32)}" alt="" loading="lazy"><b>${esc(r.name)}</b><span>${esc(r.item)}</span><small>${when(r.at)}</small></button>`).join('')}</div></div>` : ''}
+      <div class="pt-cta"><a href="#shop" data-tab-link="shop" class="btn btn-primary">Podpořit server v obchodě</a></div>`;
+    box.querySelectorAll('.pt-tab').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.pt; renderTab(); }));
+    renderTab();
+  }
+
+  async function load() {
+    const box = document.getElementById('patronsMount');
+    if (!box || box.dataset.loaded) return;
+    box.dataset.loaded = '1';
+    try {
+      const r = await fetch(`${API}/patrons.php`);
+      data = await r.json();
+      if (!data || !data.ok) throw new Error();
+      render();
+    } catch (e) {
+      box.dataset.loaded = '';
+      box.innerHTML = '<div class="cm-empty">Patrony se teď nepodařilo načíst.</div>';
+    }
+  }
+  function init() {
+    const box = document.getElementById('patronsMount');
+    if (!box) return;
+    box.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href="#shop"]');
+      if (a && typeof showPanel === 'function') { e.preventDefault(); showPanel('shop'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    });
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((en) => { if (en.some((e) => e.isIntersecting)) { io.disconnect(); load(); } });
+      io.observe(box);
+    } else load();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
