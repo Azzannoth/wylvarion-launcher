@@ -125,6 +125,7 @@ public final class WylPack extends JavaPlugin implements Listener {
         int c = host.indexOf(':');
         String h = c >= 0 ? host.substring(0, c) : host;
         UUID id = e.getPlayer().getUniqueId();
+        getLogger().info("Připojení " + e.getPlayer().getName() + " přes adresu: " + host);
         if (!h.equals(h.toLowerCase(Locale.ROOT))) {
             launcher.add(id);
             getLogger().info(e.getPlayer().getName() + " přišel z launcheru (" + h + ").");
