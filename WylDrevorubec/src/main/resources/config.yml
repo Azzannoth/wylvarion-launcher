@@ -1,0 +1,148 @@
+# ============================================================
+#  WylDrevorubec – kácení celých stromů sekerou
+# ============================================================
+# Strom se pokácí jen když:
+#  1) kmen je z bloků stromu podle "trees" níž,
+#  2) kmen NEPOLOŽIL hráč (plugin si pamatuje položené kmeny),
+#  3) u stromů s "natural-leaves: true" je u kmene aspoň "min-leaves" PŘIROZENÝCH listů
+#     (listí položené hráčem hra označuje jako trvalé – to se nepočítá, takže dům ze dřeva se nepokácí),
+#  4) strom není širší než "max-radius" a nemá víc kmenů než "max-logs".
+# Po změně: /drevorubec reload
+
+# Kácet jen když hráč DRŽÍ shift (true), nebo jen když NEDRŽÍ shift (false).
+# Nejčastěji: false = normálně kácí celý strom, se shiftem jen jeden blok.
+require-sneak: false
+
+# Animace – kmeny padají postupně odspodu nahoru (počet bloků za tick). 0 = vše najednou.
+blocks-per-tick: 3
+
+# Itemy rovnou do inventáře (co se nevejde, padne na zem).
+items-to-inventory: false
+
+# Po pokácení zasadit sazenici, když byl kmen na hlíně/trávě.
+auto-replant: true
+
+# Sekera se opotřebí za každý kmen jako při normálním kácení (Unbreaking, Fortune i ochrany pozemků platí).
+# Když je sekera skoro zničená, kácení se zastaví, aby se nerozbila.
+
+# Hlad za každý kmen (vanilla za jeden blok je 0.005).
+exhaustion-per-log: 0.02
+
+# Rozbít i listí stromu (padnou sazenice/jablka podle vanilla šance). false = listí opadá samo.
+break-leaves: false
+
+# Sekery, kterými jde kácet. Prázdné = všechny vanilla sekery.
+tools: []
+
+# Světy, kde kácení nefunguje.
+disabled-worlds:
+  - example_world
+
+# ------------------------------------------------------------
+#  STROMY – sem přidávej další (vlastní stromy, houby, ...)
+#  logs: bloky kmene      leaves: bloky koruny (listí)
+#  natural-leaves: true = vyžaduje přirozené (neposkládané) listí – jen pro skutečné listí (*_LEAVES)
+#  min-leaves: kolik bloků koruny musí být u kmene     max-logs / max-radius: limity velikosti
+#  sapling: sazenice pro auto-replant (nepovinné)
+# ------------------------------------------------------------
+trees:
+  oak:
+    logs: [OAK_LOG, OAK_WOOD]
+    leaves: [OAK_LEAVES]
+    natural-leaves: true
+    min-leaves: 4
+    max-logs: 150
+    max-radius: 7
+    sapling: OAK_SAPLING
+  birch:
+    logs: [BIRCH_LOG, BIRCH_WOOD]
+    leaves: [BIRCH_LEAVES]
+    natural-leaves: true
+    min-leaves: 4
+    max-logs: 60
+    max-radius: 4
+    sapling: BIRCH_SAPLING
+  spruce:
+    logs: [SPRUCE_LOG, SPRUCE_WOOD]
+    leaves: [SPRUCE_LEAVES]
+    natural-leaves: true
+    min-leaves: 4
+    max-logs: 200
+    max-radius: 6
+    sapling: SPRUCE_SAPLING
+  jungle:
+    logs: [JUNGLE_LOG, JUNGLE_WOOD]
+    leaves: [JUNGLE_LEAVES]
+    natural-leaves: true
+    min-leaves: 4
+    max-logs: 250
+    max-radius: 8
+    sapling: JUNGLE_SAPLING
+  acacia:
+    logs: [ACACIA_LOG, ACACIA_WOOD]
+    leaves: [ACACIA_LEAVES]
+    natural-leaves: true
+    min-leaves: 4
+    max-logs: 60
+    max-radius: 7
+    sapling: ACACIA_SAPLING
+  dark_oak:
+    logs: [DARK_OAK_LOG, DARK_OAK_WOOD]
+    leaves: [DARK_OAK_LEAVES]
+    natural-leaves: true
+    min-leaves: 4
+    max-logs: 120
+    max-radius: 7
+    sapling: DARK_OAK_SAPLING
+  pale_oak:
+    logs: [PALE_OAK_LOG, PALE_OAK_WOOD]
+    leaves: [PALE_OAK_LEAVES]
+    natural-leaves: true
+    min-leaves: 4
+    max-logs: 120
+    max-radius: 7
+    sapling: PALE_OAK_SAPLING
+  cherry:
+    logs: [CHERRY_LOG, CHERRY_WOOD]
+    leaves: [CHERRY_LEAVES]
+    natural-leaves: true
+    min-leaves: 4
+    max-logs: 80
+    max-radius: 8
+    sapling: CHERRY_SAPLING
+  mangrove:
+    logs: [MANGROVE_LOG, MANGROVE_WOOD]
+    leaves: [MANGROVE_LEAVES]
+    natural-leaves: true
+    min-leaves: 4
+    max-logs: 150
+    max-radius: 8
+  azalea:
+    logs: [OAK_LOG, OAK_WOOD]
+    leaves: [AZALEA_LEAVES, FLOWERING_AZALEA_LEAVES]
+    natural-leaves: true
+    min-leaves: 4
+    max-logs: 40
+    max-radius: 4
+  crimson:
+    logs: [CRIMSON_STEM, CRIMSON_HYPHAE]
+    leaves: [NETHER_WART_BLOCK, SHROOMLIGHT]
+    natural-leaves: false
+    min-leaves: 4
+    max-logs: 120
+    max-radius: 6
+  warped:
+    logs: [WARPED_STEM, WARPED_HYPHAE]
+    leaves: [WARPED_WART_BLOCK, SHROOMLIGHT]
+    natural-leaves: false
+    min-leaves: 4
+    max-logs: 120
+    max-radius: 6
+
+messages:
+  prefix: "&#5BC8FF&l🪓 &8» "
+  enabled: "&aKácení celých stromů zapnuto."
+  disabled: "&cKácení celých stromů vypnuto."
+  reloaded: "&aKonfigurace načtena."
+  tool-low: "&eSekera je skoro zničená – kácení zastaveno."
+  no-permission: "&cNa tohle nemáš právo."

@@ -1,0 +1,37 @@
+name: Build server plugins
+# Sestaví všechny pluginy ve složkách s pom.xml proti skutečnému Paper API
+# a uloží .jar soubory do větve "plugins-build".
+on:
+  push:
+    branches: [plugins]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build
+        run: |
+          mkdir -p /tmp/out
+          for pom in */pom.xml; do
+            d=$(dirname "$pom")
+            echo "::group::$d"
+            (cd "$d" && mvn -B -q package -DskipTests) || { echo "BUILD FAILED: $d" >> /tmp/out/FAILED.txt; }
+            cp "$d"/target/*.jar /tmp/out/ 2>/dev/null || true
+            echo "::endgroup::"
+          done
+          ls -l /tmp/out
+      - name: Publish
+        run: |
+          cd /tmp/out
+          git init -q -b plugins-build
+          git config user.name "wylvarion-bot"; git config user.email "bot@wylvarion.cz"
+          git add -A && git commit -qm "Build ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" plugins-build

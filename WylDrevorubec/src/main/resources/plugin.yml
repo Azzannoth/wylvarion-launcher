@@ -1,0 +1,15 @@
+name: WylDrevorubec
+version: '${project.version}'
+main: cz.wylvarion.drevorubec.WylDrevorubec
+api-version: '1.21'
+author: Wylvarion
+description: Kácení celých stromů sekerou – jen přirozené stromy, ne stavby.
+commands:
+  drevorubec:
+    description: Zapne/vypne kácení celých stromů (admin - reload).
+    aliases: [kaceni, treecut]
+permissions:
+  wyldrevorubec.use:
+    default: true
+  wyldrevorubec.admin:
+    default: op
