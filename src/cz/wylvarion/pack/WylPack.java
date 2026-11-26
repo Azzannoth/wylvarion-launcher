@@ -8,7 +8,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -117,21 +117,24 @@ public final class WylPack extends JavaPlugin implements Listener {
         if (changed) save();
     }
 
-    /** Launcher se připojuje na adresu s velkým písmenem (Play.wylvarion.cz) – podle toho ho poznáme. */
+    private final java.net.http.HttpClient http = java.net.http.HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(5)).build();
+
+    /** Launcher při spuštění hry nahlásí na web, že hráč má pack nainstalovaný (pack od serveru pak hra odmítne). */
     @EventHandler
-    public void onLogin(PlayerLoginEvent e) {
-        String host = e.getHostname();
-        if (host == null) return;
-        int c = host.indexOf(':');
-        String h = c >= 0 ? host.substring(0, c) : host;
-        UUID id = e.getPlayer().getUniqueId();
-        getLogger().info("Připojení " + e.getPlayer().getName() + " přes adresu: " + host);
-        if (!h.equals(h.toLowerCase(Locale.ROOT))) {
-            launcher.add(id);
-            getLogger().info(e.getPlayer().getName() + " přišel z launcheru (" + h + ").");
-        } else {
-            launcher.remove(id);
-        }
+    public void onJoin(PlayerJoinEvent e) {
+        Player p = e.getPlayer();
+        UUID id = p.getUniqueId();
+        launcher.remove(id);
+        String url = "https://wylvarion.cz/api/launcher-seen.php?name=" + java.net.URLEncoder.encode(p.getName(), StandardCharsets.UTF_8);
+        java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder(java.net.URI.create(url))
+                .timeout(java.time.Duration.ofSeconds(8)).header("User-Agent", "WylPack").GET().build();
+        http.sendAsync(req, java.net.http.HttpResponse.BodyHandlers.ofString()).thenAccept(res -> {
+            if (res.statusCode() == 200 && res.body().replace(" ", "").contains("\"launcher\":true")) {
+                launcher.add(id);
+                getLogger().info(p.getName() + " hraje přes launcher s packem.");
+            }
+        }).exceptionally(err -> null);
     }
 
     @EventHandler
