@@ -76,6 +76,7 @@ public class WylWeb extends JavaPlugin implements Listener, CommandExecutor {
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::pollLogins, 20L * 10, 20L * poll);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::communityQuests, 20L * 30, 20L * 180);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::questFileSync, 20L * 45, 20L * 60 * 30);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::liveCheck, 20L * 20, 20L * 120);
         getLogger().info("WylWeb zapnutý, web: " + url);
     }
 
@@ -462,6 +463,43 @@ public class WylWeb extends JavaPlugin implements Listener, CommandExecutor {
             if (!first) post("qsync", b.toString());
         } catch (Exception ex) {
             getLogger().warning("Quest sync: " + ex.getMessage());
+        }
+    }
+
+
+    /** Tvůrci obsahu: když někdo začne streamovat Wylvarion, oznámí to ve hře. */
+    private final Set<String> liveNow = ConcurrentHashMap.newKeySet();
+    private boolean liveInit = false;
+    private void liveCheck() {
+        try {
+            String liveUrl = url.replace("mc-sync.php", "live.php");
+            HttpRequest req = HttpRequest.newBuilder(URI.create(liveUrl)).timeout(Duration.ofSeconds(20))
+                    .header("User-Agent", "WylWeb/1.3").GET().build();
+            HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (res.statusCode() != 200) return;
+            com.google.gson.JsonObject root = com.google.gson.JsonParser.parseString(res.body()).getAsJsonObject();
+            Set<String> cur = new HashSet<>();
+            List<String[]> fresh = new ArrayList<>();
+            for (com.google.gson.JsonElement e : root.getAsJsonArray("live")) {
+                com.google.gson.JsonObject o = e.getAsJsonObject();
+                if (!o.has("wyl") || !o.get("wyl").getAsBoolean()) continue;
+                String nick = o.get("nick").getAsString();
+                String key = nick + "|" + (o.has("since") ? o.get("since").getAsLong() : 0);
+                cur.add(key);
+                if (liveInit && !liveNow.contains(key))
+                    fresh.add(new String[]{nick, o.get("url").getAsString(), o.has("platform") ? o.get("platform").getAsString() : "twitch"});
+            }
+            liveNow.clear(); liveNow.addAll(cur); liveInit = true;
+            for (String[] f : fresh) {
+                String nick = f[0].replaceAll("[^A-Za-z0-9_.]", "");
+                String link = f[1].replaceAll("[^A-Za-z0-9_:/.?=&%-]", "");
+                String plat = "kick".equals(f[2]) ? "Kicku" : "Twitchi";
+                String mm = "<gradient:#ef4444:#a855f7><bold>LIVE</bold></gradient> <white>🎥 " + nick + "</white> <gray>právě streamuje Wylvarion na " + plat + "!</gray> "
+                        + "<click:open_url:'" + link + "'><hover:show_text:'<gray>Otevřít stream'><#ef4444><u>Sledovat ▶</u></#ef4444></hover></click>";
+                Bukkit.getScheduler().runTask(this, () -> Bukkit.broadcast(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(mm)));
+            }
+        } catch (Exception ex) {
+            // stav streamů je jen doplněk
         }
     }
 
