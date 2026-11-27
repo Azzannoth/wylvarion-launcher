@@ -482,3 +482,5 @@
 .in-creator .in-rate{font-style:normal;font-size:11.5px;font-weight:800;color:var(--c);opacity:.85;}
 .in-creator .in-clink{margin-top:4px;font-size:12px;font-weight:700;color:#d8b4fe;text-decoration:none;padding:4px 10px;border-radius:99px;border:1px solid var(--line);}
 .in-creator .in-clink:hover{border-color:var(--c);color:#fff;}
+.in-clinks{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin-top:4px;}
+.in-clinks .in-clink{margin-top:0;}

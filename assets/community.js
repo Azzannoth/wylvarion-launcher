@@ -507,7 +507,7 @@
           <span class="rt-chip" data-rt-sum="${esc(c.nick.toLowerCase())}"><span class="rt-star">★</span><b>–</b></span>
           <img src="https://mc-heads.net/body/${encodeURIComponent(c.nick)}/140" alt="" loading="lazy"><b>${esc(c.nick)}</b><span>${esc(t.name || 'Tvůrce')}</span>
           <em class="in-rate">★ Ohodnotit</em>
-          ${c.url ? `<a class="in-clink" href="${esc(c.url)}" target="_blank" rel="noopener">Kanál ↗</a>` : ''}
+          ${(c.links && c.links.length) ? `<span class="in-clinks">${c.links.map((l) => `<a class="in-clink" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)} ↗</a>`).join('')}</span>` : (c.url ? `<a class="in-clink" href="${esc(c.url)}" target="_blank" rel="noopener">Kanál ↗</a>` : '')}
         </div>`; }).join('')}</div>
         <p class="cm-note">Líbí se ti obsah některého tvůrce? Klikni na jeho kartu a ohodnoť ho hvězdičkami (přihlášení přes Discord).</p>`
         : '<div class="cm-empty"><b>Zatím tu nikdo není.</b><span>Buď první tvůrce Wylvarionu a získej GOD VIP natrvalo!</span></div>'}`;
