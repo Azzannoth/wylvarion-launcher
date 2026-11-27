@@ -503,8 +503,15 @@
         <p class="cm-note">Odesláním žádosti souhlasíš s pravidly pro tvůrce výše.</p></div>
       <h3 class="sl-title">Naši tvůrci</h3>
       ${I.creators.length ? `<div class="in-creators">${I.creators.map((c) => { const t = I.tiers.find((x) => x.id === c.type) || {}; return `
-        <a class="in-creator" href="${esc(c.url || '#')}" target="_blank" rel="noopener" style="--c:${t.color || '#a855f7'}"><img src="https://mc-heads.net/body/${encodeURIComponent(c.nick)}/140" alt="" loading="lazy"><b>${esc(c.nick)}</b><span>${esc(t.name || 'Tvůrce')}</span></a>`; }).join('')}</div>`
+        <div class="in-creator rt-card" data-rate="${esc(c.nick)}" tabindex="0" role="button" aria-label="Hodnocení – ${esc(c.nick)}" style="--c:${t.color || '#a855f7'}">
+          <span class="rt-chip" data-rt-sum="${esc(c.nick.toLowerCase())}"><span class="rt-star">★</span><b>–</b></span>
+          <img src="https://mc-heads.net/body/${encodeURIComponent(c.nick)}/140" alt="" loading="lazy"><b>${esc(c.nick)}</b><span>${esc(t.name || 'Tvůrce')}</span>
+          <em class="in-rate">★ Ohodnotit</em>
+          ${c.url ? `<a class="in-clink" href="${esc(c.url)}" target="_blank" rel="noopener">Kanál ↗</a>` : ''}
+        </div>`; }).join('')}</div>
+        <p class="cm-note">Líbí se ti obsah některého tvůrce? Klikni na jeho kartu a ohodnoť ho hvězdičkami (přihlášení přes Discord).</p>`
         : '<div class="cm-empty"><b>Zatím tu nikdo není.</b><span>Buď první tvůrce Wylvarionu a získej GOD VIP natrvalo!</span></div>'}`;
+    if (I.creators.length && typeof loadRatingSummary === 'function') loadRatingSummary();
   }
 
 
