@@ -42,6 +42,20 @@ if ($action === 'stats') {
     exit('ok');
 }
 
+if ($action === 'qsync') {
+    $rows = is_array($in['players'] ?? null) ? $in['players'] : [];
+    store_update('players', function (&$d) use ($rows) {
+        foreach ($rows as $r) {
+            $uuid = strtolower(preg_replace('/[^0-9a-fA-F-]/', '', (string)($r['uuid'] ?? '')));
+            if ($uuid === '' || !isset($d[$uuid])) continue;   // jen hráči, které už web zná (kvůli jménu)
+            if (isset($r['quests']) && is_numeric($r['quests']) && $r['quests'] >= 0) $d[$uuid]['quests'] = (int)$r['quests'];
+            if (isset($r['vyp']) && is_numeric($r['vyp']) && $r['vyp'] >= 0) $d[$uuid]['vyp'] = (int)$r['vyp'];
+            if (isset($r['qrank']) && is_string($r['qrank']) && preg_match('/^[a-z_]{2,20}$/', $r['qrank'])) $d[$uuid]['qrank'] = $r['qrank'];
+        }
+    });
+    exit('ok');
+}
+
 if ($action === 'cquests') {
     $saved = (int)($in['saved'] ?? time());
     $clean = fn($v, $n = 120) => mb_substr(trim(preg_replace(['/[&§]#?[0-9a-fk-orx]/iu', '/\s+/u'], ['', ' '], strip_tags((string)$v))), 0, $n);
