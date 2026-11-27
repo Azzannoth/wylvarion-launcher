@@ -74,6 +74,7 @@ public class WylWeb extends JavaPlugin implements Listener, CommandExecutor {
         Bukkit.getScheduler().runTaskTimer(this, this::onlineSync, 20L * 90, 20L * interval);
         Bukkit.getScheduler().runTaskTimer(this, this::fullSync, 20L * 60 * 60 * 6, 20L * 60 * 60 * 6);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::pollLogins, 20L * 10, 20L * poll);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::communityQuests, 20L * 30, 20L * 180);
         getLogger().info("WylWeb zapnutý, web: " + url);
     }
 
@@ -353,6 +354,72 @@ public class WylWeb extends JavaPlugin implements Listener, CommandExecutor {
             if (!"poll".equals(action)) getLogger().warning("Web " + action + ": " + e.getMessage());
             return null;
         }
+    }
+
+
+    /** Komunitní questy (plugin CommunityQuests): stav aktivních questů a příspěvky hráčů → web. */
+    private long cqLastMod = 0;
+    private void communityQuests() {
+        try {
+            File dir = new File(getDataFolder().getParentFile(), "CommunityQuests");
+            File save = new File(dir, "questSave.json");
+            if (!save.isFile()) return;
+            long mod = save.lastModified();
+            if (mod == cqLastMod) return;
+            org.bukkit.configuration.file.YamlConfiguration cfg = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new File(dir, "config.yml"));
+            com.google.gson.JsonObject root = com.google.gson.JsonParser.parseString(Files.readString(save.toPath(), StandardCharsets.UTF_8)).getAsJsonObject();
+            StringBuilder b = new StringBuilder("{\"saved\":").append(mod / 1000).append(",\"quests\":[");
+            boolean firstQ = true;
+            for (com.google.gson.JsonElement qe : root.getAsJsonArray("activeQuests")) {
+                com.google.gson.JsonObject qo = qe.getAsJsonObject();
+                String id = qo.has("id") ? qo.get("id").getAsString() : "?";
+                org.bukkit.configuration.ConfigurationSection sec = cfg.getConfigurationSection("Quests." + id);
+                String name = strip(sec != null ? sec.getString("displayName", id) : id);
+                String desc = strip(sec != null ? sec.getString("description", "") : "");
+                if (!firstQ) b.append(','); firstQ = false;
+                b.append("{\"id\":").append(q(id)).append(",\"name\":").append(q(name)).append(",\"desc\":").append(q(desc))
+                 .append(",\"type\":").append(q(qo.has("type") ? qo.get("type").getAsString() : ""))
+                 .append(",\"timeLeft\":").append(qo.has("timeLeft") ? qo.get("timeLeft").getAsLong() : 0)
+                 .append(",\"objectives\":[");
+                boolean fo = true;
+                if (qo.has("objectives")) for (com.google.gson.JsonElement oe : qo.getAsJsonArray("objectives")) {
+                    com.google.gson.JsonObject oo = oe.getAsJsonObject();
+                    if (!fo) b.append(','); fo = false;
+                    String od = oo.has("description") && !oo.get("description").isJsonNull() ? oo.get("description").getAsString() : (oo.has("type") ? oo.get("type").getAsString() : "");
+                    b.append("{\"desc\":").append(q(strip(od))).append(",\"goal\":").append(oo.has("goal") ? oo.get("goal").getAsDouble() : 0)
+                     .append(",\"done\":").append(oo.has("amountComplete") ? oo.get("amountComplete").getAsDouble() : 0).append('}');
+                }
+                b.append("],\"players\":[");
+                boolean fp = true;
+                if (qo.has("playerMap")) for (com.google.gson.JsonElement pe : qo.getAsJsonArray("playerMap")) {
+                    com.google.gson.JsonObject po = pe.getAsJsonObject();
+                    String uuid = null; double sum = 0;
+                    for (Map.Entry<String, com.google.gson.JsonElement> en : po.entrySet()) {
+                        if (en.getKey().equals("name")) continue;
+                        uuid = en.getKey();
+                        try {
+                            com.google.gson.JsonObject m = com.google.gson.JsonParser.parseString(en.getValue().getAsString()).getAsJsonObject();
+                            for (Map.Entry<String, com.google.gson.JsonElement> v : m.entrySet()) sum += v.getValue().getAsDouble();
+                        } catch (Exception ignored) { }
+                    }
+                    if (uuid == null) continue;
+                    String pn = null;
+                    try { pn = Bukkit.getOfflinePlayer(UUID.fromString(uuid)).getName(); } catch (Exception ignored) { }
+                    if (pn == null && po.has("name")) pn = strip(po.get("name").getAsString());
+                    if (!fp) b.append(','); fp = false;
+                    b.append("{\"uuid\":").append(q(uuid)).append(",\"name\":").append(q(pn == null ? "?" : pn)).append(",\"amount\":").append(sum).append('}');
+                }
+                b.append("]}");
+            }
+            b.append("]}");
+            if (post("cquests", b.toString()) != null) cqLastMod = mod;
+        } catch (Exception ex) {
+            getLogger().warning("CommunityQuests sync: " + ex.getMessage());
+        }
+    }
+    private static String strip(String s) {
+        if (s == null) return "";
+        return s.replaceAll("(?i)[§&]x([§&][0-9a-f]){6}", "").replaceAll("(?i)[§&][0-9a-fk-or]", "").replaceAll("<[^>]{1,30}>", "").trim();
     }
 
     private static String q(String s) {
