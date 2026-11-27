@@ -27,6 +27,8 @@ const BADGES = [
     'pmecenas'   => ['Mecenáš', 'Podpořil server částkou 5 000 Kč a víc', '🏛️', 'e'],
     'patron'     => ['Patron', 'Podpořil server částkou 1 000 Kč a víc', '🎗️', 'r'],
     'sponsor'    => ['Sponzor', 'Podporuje server jako sponzor', '💎', 'e'],
+    'cotm'       => ['Tvůrce měsíce', 'Minulý měsíc streamoval Wylvarion nejvíc ze všech tvůrců', '🏆', 'l'],
+    'creator'    => ['Tvůrce obsahu', 'Člen programu pro tvůrce – streamuje nebo natáčí Wylvarion', '🎥', 'e'],
     'collector'  => ['Sběratel', 'Získáno aspoň 25 odznaků', '🏅', 'l'],
     'allround'   => ['Všeuměl', '100 h hraní, 100 questů, 1000 mobů a 100 ryb', '🎭', 'e'],
     'veteran2'   => ['Pradávný', 'Na serveru déle než 2 roky', '🗿', 'e'],
@@ -93,6 +95,23 @@ const BADGE_GOALS = [
 ];
 const BADGE_RANK = ['l' => 4, 'e' => 3, 'r' => 2, 'c' => 1];
 
+/** tvůrci obsahu z Influencer stránky: lowercase nick => nick */
+function pl_creators(): array {
+    static $c = null;
+    if ($c !== null) return $c;
+    $c = [];
+    $inf = @include __DIR__ . '/../includes/data/influencers.php';
+    foreach ((is_array($inf) ? ($inf['creators'] ?? []) : []) as $x) if (!empty($x['nick'])) $c[strtolower($x['nick'])] = $x['nick'];
+    return $c;
+}
+/** tvůrce minulého měsíce (nejvíc minut streamování Wylvarionu) */
+function pl_cotm(): ?string {
+    static $b = false;
+    if ($b !== false) return $b;
+    $s = store_load('livestats')[date('Y-m', strtotime('first day of last month'))] ?? [];
+    arsort($s);
+    return $b = $s ? strtolower((string)array_key_first($s)) : null;
+}
 /** příspěvky do komunitních questů: uuid => [amount, quests] */
 function pl_cq(): array {
     static $t = null;
@@ -118,6 +137,9 @@ function pl_badges(?array $p, array $ctx): array {
     $has = [];
     if (!empty($ctx['team'])) $has[] = 'team';
     if (!empty($ctx['sponsor'])) $has[] = 'sponsor';
+    $ck = strtolower($p['name'] ?? ($ctx['nick'] ?? ''));
+    if ($ck !== '' && isset(pl_creators()[$ck])) $has[] = 'creator';
+    if ($ck !== '' && pl_cotm() === $ck) $has[] = 'cotm';
     $tier = $ctx['tier'] ?? null;
     if ($tier === 'legend') $has[] = 'plegend';
     if (in_array($tier, ['legend', 'mecenas'], true)) $has[] = 'pmecenas';
@@ -302,7 +324,7 @@ if (!$p && !$votes && !isset($team[$key])) wyl_json(404, ['ok' => false, 'error'
 
 $h = $p ? pl_hours($p) : 0;
 $tier = store_load('patrontiers')[$key] ?? null;
-$ctx = ['team' => isset($team[$key]), 'sponsor' => isset($sponsors[$key]), 'votes' => $votes, 'pun' => $pun, 'tier' => $tier,
+$ctx = ['nick' => $key, 'team' => isset($team[$key]), 'sponsor' => isset($sponsors[$key]), 'votes' => $votes, 'pun' => $pun, 'tier' => $tier,
         'tops' => $p ? (pl_tops($all)[$p['uuid'] ?? ''] ?? []) : []];
 $has = pl_badges($p, $ctx);
 $goals = [];
@@ -331,6 +353,7 @@ wyl_json(200, [
     'votes' => $votes,
     'team' => $team[$key] ?? null,
     'sponsor' => isset($sponsors[$key]),
+    'creator' => isset(pl_creators()[$key]),
     'punishments' => $pun,
     'bio' => $prof['bio'] ?? '',
     'frame' => $frame,

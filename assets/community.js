@@ -194,6 +194,7 @@
             ${p.online ? '<span class="pf-tag online">● Online</span>' : ''}
             ${p.team ? `<span class="pf-tag team">🛡️ ${esc(p.team)}</span>` : ''}
             ${p.sponsor ? '<span class="pf-tag sponsor">💎 Sponzor</span>' : ''}
+            ${p.creator ? '<span class="pf-tag creator">🎥 Tvůrce</span>' : ''}
             <span class="pf-tag st-${state[0]}">${state[1]}</span>
           </div>
           <h3 class="pf-name">${esc(p.name)}</h3>
@@ -487,6 +488,7 @@
           <span class="rt-chip" data-rt-sum="${esc(c.nick.toLowerCase())}"><span class="rt-star">★</span><b>–</b></span>
           <img src="https://mc-heads.net/body/${encodeURIComponent(c.nick)}/140" alt="" loading="lazy"><b>${esc(c.nick)}</b><span>${esc(t.name || 'Tvůrce')}</span>
           <em class="in-rate">★ Ohodnotit</em>
+          <a class="in-plink" href="#hraci/${encodeURIComponent(c.nick)}" data-hr="${esc(c.nick)}">👤 Profil hráče</a>
           ${(c.links && c.links.length) ? `<span class="in-clinks">${c.links.map((l) => `<a class="in-clink" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)} ↗</a>`).join('')}</span>` : (c.url ? `<a class="in-clink" href="${esc(c.url)}" target="_blank" rel="noopener">Kanál ↗</a>` : '')}
         </div>`; }).join('')}</div>
         <p class="cm-note">Líbí se ti obsah některého tvůrce? Klikni na jeho kartu a ohodnoť ho hvězdičkami (přihlášení přes Discord).</p>`
@@ -1012,4 +1014,191 @@
     <h3>Levely</h3>
     <p>Noví peti a mounti mají <strong>levely 1–200</strong>. Zkušenosti sbírají ježděním a bojem – s každým levelem mají víc života, regenerace a síly. Každých 25 levelů změní barvu.</p>
 `);
+})();
+
+/* =================== TVŮRCI: LIVE, klip týdne, žebříček + VÁNOCE =================== */
+(function () {
+  'use strict';
+  const API = (typeof CONFIG !== 'undefined' && CONFIG.apiBase) || 'api';
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const num = (n) => Number(n || 0).toLocaleString('cs-CZ', { maximumFractionDigits: 0 });
+  const host = location.hostname || 'wylvarion.cz';
+  let LIVE = { live: [], creators: {}, month: {}, best: null };
+
+  /* ---------- LIVE ---------- */
+  function liveSince(t) {
+    const m = Math.max(1, Math.floor((Date.now() / 1000 - t) / 60));
+    return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
+  }
+  function decorateCards() {
+    document.querySelectorAll('.in-creator[data-rate]').forEach((card) => {
+      const s = LIVE.creators[card.dataset.rate];
+      card.classList.toggle('is-live', !!(s && s.live));
+      card.querySelector('.in-live')?.remove();
+      if (s && s.live) {
+        const a = document.createElement('a');
+        a.className = 'in-live';
+        a.href = s.url; a.target = '_blank'; a.rel = 'noopener';
+        a.title = `${s.title || ''}${s.game ? ' · ' + s.game : ''}`;
+        a.textContent = '🔴 Právě živě';
+        card.prepend(a);
+      }
+    });
+  }
+  function renderHomeLive() {
+    const home = document.getElementById('panel-home');
+    if (!home) return;
+    const wyl = LIVE.live.filter((s) => s.wyl);
+    let box = document.getElementById('hsLive');
+    if (!wyl.length) { box?.remove(); return; }
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'hsLive';
+      box.className = 'wrap home-section hs-live';
+      const anchor = document.getElementById('hsStart') || home.querySelector('#howto') || home.querySelector('.home-section');
+      if (!anchor) return;
+      anchor.parentNode.insertBefore(box, anchor);
+    }
+    const main = wyl.find((s) => s.platform === 'twitch') || wyl[0];
+    if (box.dataset.main === main.nick + main.platform && box.querySelector('iframe')) {
+      box.querySelector('.hs-live-since').textContent = `živě ${liveSince(main.since)}`;
+      return;
+    }
+    box.dataset.main = main.nick + main.platform;
+    const embed = main.platform === 'twitch'
+      ? `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(main.channel)}&parent=${encodeURIComponent(host)}&muted=true" allowfullscreen title="Stream ${esc(main.nick)}"></iframe>`
+      : `<a class="hs-live-kick" href="${esc(main.url)}" target="_blank" rel="noopener">▶ Sledovat na Kicku</a>`;
+    box.innerHTML = `<div class="hs-live-card">
+      <div class="hs-live-info"><span class="hs-live-dot">🔴 PRÁVĚ ŽIVĚ</span>
+        <h2>${esc(main.nick)} streamuje Wylvarion!</h2>
+        <p>${esc(main.title)}</p><em class="hs-live-since">živě ${liveSince(main.since)}</em>
+        <div class="hs-live-btns"><a class="btn btn-primary btn-sm" href="${esc(main.url)}" target="_blank" rel="noopener">Sledovat na ${main.platform === 'twitch' ? 'Twitchi' : 'Kicku'}</a>
+        <button type="button" class="btn btn-ghost btn-sm" data-hs-tvurci>Všichni tvůrci</button></div>
+        ${wyl.length > 1 ? `<div class="hs-live-more">Živě jsou i: ${wyl.filter((s) => s !== main).map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.nick)}</a>`).join(', ')}</div>` : ''}
+      </div>
+      <div class="hs-live-embed">${embed}</div></div>`;
+    box.querySelector('[data-hs-tvurci]')?.addEventListener('click', () => { if (typeof showPanel === 'function') { showPanel('influencer'); window.scrollTo({ top: 0, behavior: 'smooth' }); } });
+  }
+  async function liveLoad() {
+    try {
+      LIVE = await (await fetch(`${API}/live.php`, { cache: 'no-store' })).json();
+      decorateCards(); renderHomeLive(); renderBoard();
+    } catch (e) { /* streamy jsou jen doplněk */ }
+  }
+
+  /* ---------- Klip týdne + žebříček tvůrců ---------- */
+  function clipEmbed(u) {
+    let m;
+    if ((m = u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/))) return `<iframe src="https://www.youtube.com/embed/${m[1]}" allowfullscreen title="Klip týdne"></iframe>`;
+    if ((m = u.match(/(?:clips\.twitch\.tv\/|twitch\.tv\/\w+\/clip\/)([\w-]+)/))) return `<iframe src="https://clips.twitch.tv/embed?clip=${m[1]}&parent=${encodeURIComponent(host)}" allowfullscreen title="Klip týdne"></iframe>`;
+    if ((m = u.match(/tiktok\.com\/@[\w.]+\/video\/(\d+)/))) return `<iframe src="https://www.tiktok.com/embed/v2/${m[1]}" allowfullscreen title="Klip týdne" class="tt"></iframe>`;
+    return `<a class="btn btn-primary" href="${esc(u)}" target="_blank" rel="noopener">▶ Pustit klip</a>`;
+  }
+  let RATINGS = null;
+  let boardTab = 'hours';
+  async function renderBoard() {
+    const mount = document.getElementById('inMount');
+    if (!mount || typeof INFLUENCERS === 'undefined' || !mount.querySelector('.in-top')) return;
+    const I = INFLUENCERS;
+    let box = document.getElementById('inBoard');
+    if (!box) { box = document.createElement('div'); box.id = 'inBoard'; mount.querySelector('.in-top').after(box); }
+    if (!RATINGS) { try { RATINGS = (await (await fetch(`${API}/ratings.php`, { credentials: 'same-origin' })).json()).summary || {}; } catch (e) { RATINGS = {}; } }
+    const nicks = I.creators.map((c) => c.nick);
+    const rows = nicks.map((n) => ({ nick: n, min: (LIVE.month || {})[n] || 0, avg: (RATINGS[n] || {}).avg || 0, cnt: (RATINGS[n] || {}).count || 0 }))
+      .sort((a, b) => (boardTab === 'hours' ? (b.min - a.min) || (b.avg - a.avg) : (b.avg - a.avg) || (b.cnt - a.cnt)));
+    const best = LIVE.best && LIVE.best.nick ? LIVE.best : null;
+    const clip = I.clip && I.clip.url ? I.clip : null;
+    const mName = new Date().toLocaleString('cs-CZ', { month: 'long' });
+    box.innerHTML = `<div class="in-two">
+      <div class="in-clip"><h3 class="sl-title">🎬 Klip týdne</h3>
+        ${clip ? `<div class="in-clip-embed">${clipEmbed(clip.url)}</div><p><b>${esc(clip.title || 'Klip týdne')}</b>${clip.nick ? ` · autor <a href="#hraci/${encodeURIComponent(clip.nick)}" data-hr="${esc(clip.nick)}">${esc(clip.nick)}</a>` : ''}</p>`
+          : '<div class="cm-empty small"><b>Klip týdne vyhlašujeme každý týden.</b><span>Pošli svůj nejlepší klip z Wylvarionu do tvůrčího kanálu na Discordu – autor vítězného klipu dostane odměnu!</span></div>'}
+      </div>
+      <div class="in-board"><h3 class="sl-title">🏆 Žebříček tvůrců</h3>
+        ${best ? `<div class="in-cotm"><span>🏆</span><div><small>Tvůrce měsíce</small><b data-hr="${esc(best.nick)}">${esc(best.nick)}</b><em>${num(best.minutes / 60)} h streamování Wylvarionu</em></div></div>` : ''}
+        <div class="in-btabs"><button type="button" class="wq-chip${boardTab === 'hours' ? ' is-active' : ''}" data-btab="hours">⏱ Hodiny streamů (${esc(mName)})</button><button type="button" class="wq-chip${boardTab === 'rating' ? ' is-active' : ''}" data-btab="rating">★ Hodnocení hráčů</button></div>
+        <div class="in-brows">${rows.map((r, i) => `<div class="in-brow${i === 0 ? ' top' : ''}"><span class="n">${i + 1}.</span><img src="https://mc-heads.net/avatar/${encodeURIComponent(r.nick)}/32" alt="" loading="lazy"><b>${esc(r.nick)}</b>
+          ${LIVE.creators && LIVE.creators[r.nick] && LIVE.creators[r.nick].live ? '<i class="in-bl">LIVE</i>' : ''}
+          <em>${boardTab === 'hours' ? `${(r.min / 60).toLocaleString('cs-CZ', { maximumFractionDigits: 1 })} h` : (r.cnt ? `★ ${r.avg.toFixed(1)} <small>(${r.cnt})</small>` : '–')}</em></div>`).join('')}</div>
+        <p class="cm-note">Počítají se hodiny živého vysílání Wylvarionu (Minecraft nebo „Wylvarion“ v názvu streamu). Kdo minulý měsíc streamoval nejvíc, je Tvůrce měsíce a dostane odznak na profilu.</p>
+      </div></div>`;
+    box.querySelectorAll('[data-btab]').forEach((b) => b.addEventListener('click', () => { boardTab = b.dataset.btab; renderBoard(); }));
+  }
+  function watchInfluencer() {
+    const mount = document.getElementById('inMount');
+    if (!mount) return;
+    new MutationObserver(() => {
+      if (mount.querySelector('.in-top') && !document.getElementById('inBoard')) { decorateCards(); renderBoard(); }
+    }).observe(mount, { childList: true });
+  }
+
+  /* ---------- VÁNOCE (1.–26. 12., náhled přes ?xmas=1) ---------- */
+  function pragueNow() {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Prague', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date()).map((x) => [x.type, x.value]));
+    return { y: +p.year, m: +p.month, d: +p.day };
+  }
+  function xmasOn() {
+    if (/[?&]xmas=1/.test(location.search)) return true;
+    const n = pragueNow();
+    return n.m === 12 && n.d <= 26;
+  }
+  function snow() {
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = document.createElement('canvas');
+    c.className = 'xmas-snow';
+    c.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(c);
+    const ctx = c.getContext('2d');
+    let W, H, flakes;
+    const resize = () => { W = c.width = innerWidth; H = c.height = innerHeight; };
+    resize(); addEventListener('resize', resize);
+    const count = Math.min(110, Math.round(innerWidth / 14));
+    flakes = Array.from({ length: count }, () => ({ x: Math.random() * W, y: Math.random() * H, r: 1 + Math.random() * 2.6, s: 0.4 + Math.random() * 1.1, w: Math.random() * Math.PI * 2 }));
+    (function frame() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(255,255,255,.85)';
+      for (const f of flakes) {
+        f.y += f.s; f.w += 0.01; f.x += Math.sin(f.w) * 0.4;
+        if (f.y > H + 5) { f.y = -5; f.x = Math.random() * W; }
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill();
+      }
+      requestAnimationFrame(frame);
+    })();
+  }
+  function xmasLogo() {
+    const brand = document.querySelector('.nav .brand');
+    if (!brand || brand.querySelector('.xmas-hat')) return;
+    brand.classList.add('is-xmas');
+    brand.insertAdjacentHTML('afterbegin', `<svg class="xmas-hat" viewBox="0 0 64 48" aria-hidden="true">
+      <path d="M6 38 C14 16 30 4 46 8 C52 10 56 16 58 24 L52 26 C48 18 42 16 36 18 C28 22 22 30 20 38 Z" fill="#d62b3a"/>
+      <path d="M46 8 C52 10 56 16 58 24 L52 26 C50 20 47 15 42 12 Z" fill="#a51d2b"/>
+      <rect x="2" y="34" width="24" height="9" rx="4.5" fill="#fff"/>
+      <circle cx="56" cy="27" r="6" fill="#fff"/></svg>`);
+  }
+  function xmasCountdown() {
+    const timers = document.querySelector('#hsStart .hs-timers');
+    if (!timers || document.getElementById('hsXmas')) { if (!timers) setTimeout(xmasCountdown, 800); return; }
+    const el = document.createElement('div');
+    el.className = 'hs-timer xmas'; el.id = 'hsXmas';
+    el.innerHTML = '<small>🎄 Do Štědrého dne</small><b class="hs-title">Vánoce na Wylvarionu</b><span class="hs-left"></span><em class="hs-when">čtvrtek 24. 12.</em>';
+    timers.prepend(el);
+    const n = pragueNow();
+    const target = Date.UTC(n.y, 11, 23, 23, 0); // 24. 12. 00:00 v Praze (UTC+1)
+    const tick = () => {
+      const ms = target - Date.now();
+      const left = el.querySelector('.hs-left');
+      if (ms <= 0) { left.textContent = 'Veselé Vánoce! 🎁'; return; }
+      const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+      left.textContent = (d ? `${d} d ` : '') + `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}`;
+    };
+    tick(); setInterval(tick, 1000);
+  }
+
+  function start() {
+    watchInfluencer();
+    liveLoad();
+    setInterval(liveLoad, 120000);
+    if (xmasOn()) { document.documentElement.classList.add('xmas'); snow(); xmasLogo(); xmasCountdown(); }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
