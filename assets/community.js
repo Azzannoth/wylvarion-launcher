@@ -480,6 +480,18 @@
     const I = INFLUENCERS;
     const li = (arr) => arr.map((r) => `<li>${esc(r)}</li>`).join('');
     box.innerHTML = `
+      <div class="in-top">
+      <h3 class="sl-title">Naši tvůrci</h3>
+      ${I.creators.length ? `<div class="in-creators">${I.creators.map((c) => { const t = I.tiers.find((x) => x.id === c.type) || {}; return `
+        <div class="in-creator rt-card" data-rate="${esc(c.nick)}" tabindex="0" role="button" aria-label="Hodnocení – ${esc(c.nick)}" style="--c:${t.color || '#a855f7'}">
+          <span class="rt-chip" data-rt-sum="${esc(c.nick.toLowerCase())}"><span class="rt-star">★</span><b>–</b></span>
+          <img src="https://mc-heads.net/body/${encodeURIComponent(c.nick)}/140" alt="" loading="lazy"><b>${esc(c.nick)}</b><span>${esc(t.name || 'Tvůrce')}</span>
+          <em class="in-rate">★ Ohodnotit</em>
+          ${(c.links && c.links.length) ? `<span class="in-clinks">${c.links.map((l) => `<a class="in-clink" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)} ↗</a>`).join('')}</span>` : (c.url ? `<a class="in-clink" href="${esc(c.url)}" target="_blank" rel="noopener">Kanál ↗</a>` : '')}
+        </div>`; }).join('')}</div>
+        <p class="cm-note">Líbí se ti obsah některého tvůrce? Klikni na jeho kartu a ohodnoť ho hvězdičkami (přihlášení přes Discord).</p>`
+        : '<div class="cm-empty"><b>Zatím tu nikdo není.</b><span>Buď první tvůrce Wylvarionu a získej GOD VIP natrvalo!</span></div>'}
+      </div>
       ${I.highlight ? `<div class="in-god"><div class="in-god-ic">👑</div><div><b>${esc(I.highlight.title)}</b><span>${esc(I.highlight.text)}</span></div></div>` : ''}
       ${I.ladder ? `<div class="in-ladder"><h3 class="sl-title">Postup tvůrce</h3><div class="in-lsteps">${I.ladder.map((l, k) => `
         <div class="in-lstep" style="--c:${esc(l.color || '#a855f7')}"><span class="in-lnum">${k + 1}</span><div class="in-lic">${l.icon}</div><b>${esc(l.name)}</b><em>${esc(l.when)}</em><p>${esc(l.text)}</p></div>${k < I.ladder.length - 1 ? '<span class="in-larrow">➜</span>' : ''}`).join('')}</div>
@@ -501,16 +513,7 @@
         <li><b>Schválení</b><span>Admin team projde tvůj obsah a ozve se ti obvykle do pár dní.</span></li>
         <li><b>Rank a GOD VIP</b><span>Dostaneš rank tvůrce a GOD VIP natrvalo, dokud rank máš.</span></li></ol>
         <p class="cm-note">Odesláním žádosti souhlasíš s pravidly pro tvůrce výše.</p></div>
-      <h3 class="sl-title">Naši tvůrci</h3>
-      ${I.creators.length ? `<div class="in-creators">${I.creators.map((c) => { const t = I.tiers.find((x) => x.id === c.type) || {}; return `
-        <div class="in-creator rt-card" data-rate="${esc(c.nick)}" tabindex="0" role="button" aria-label="Hodnocení – ${esc(c.nick)}" style="--c:${t.color || '#a855f7'}">
-          <span class="rt-chip" data-rt-sum="${esc(c.nick.toLowerCase())}"><span class="rt-star">★</span><b>–</b></span>
-          <img src="https://mc-heads.net/body/${encodeURIComponent(c.nick)}/140" alt="" loading="lazy"><b>${esc(c.nick)}</b><span>${esc(t.name || 'Tvůrce')}</span>
-          <em class="in-rate">★ Ohodnotit</em>
-          ${(c.links && c.links.length) ? `<span class="in-clinks">${c.links.map((l) => `<a class="in-clink" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)} ↗</a>`).join('')}</span>` : (c.url ? `<a class="in-clink" href="${esc(c.url)}" target="_blank" rel="noopener">Kanál ↗</a>` : '')}
-        </div>`; }).join('')}</div>
-        <p class="cm-note">Líbí se ti obsah některého tvůrce? Klikni na jeho kartu a ohodnoť ho hvězdičkami (přihlášení přes Discord).</p>`
-        : '<div class="cm-empty"><b>Zatím tu nikdo není.</b><span>Buď první tvůrce Wylvarionu a získej GOD VIP natrvalo!</span></div>'}`;
+`;
     if (I.creators.length && typeof loadRatingSummary === 'function') loadRatingSummary();
   }
 

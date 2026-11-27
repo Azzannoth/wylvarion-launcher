@@ -484,3 +484,4 @@
 .in-creator .in-clink:hover{border-color:var(--c);color:#fff;}
 .in-clinks{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin-top:4px;}
 .in-clinks .in-clink{margin-top:0;}
+.in-top{margin-bottom:22px;}
