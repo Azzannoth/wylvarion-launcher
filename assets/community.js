@@ -75,6 +75,7 @@
     const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
     return d ? `${d} d ${h} h` : h ? `${h} h ${m} min` : `${m} min`;
   }
+  const CQT = { mobkill: 'Zabíjení mobů', blockbreak: 'Těžení bloků', blockplace: 'Pokládání bloků', catchfish: 'Rybaření', fish: 'Rybaření', donate: 'Darování itemů', craft: 'Craftění', smelt: 'Pečení v peci', movement: 'Nachozené bloky', experience: 'Získané XP', consume: 'Snědené jídlo', breed: 'Množení zvířat', tame: 'Ochočení zvířat', shear: 'Stříhání ovcí', milk: 'Dojení', enchant: 'Enchantování', playerkill: 'Zabití hráčů' };
   async function cqRender() {
     const box = $('#hrHome');
     if (!box) return;
@@ -89,7 +90,7 @@
         return `<div class="cq-card">
           <div class="cq-top"><div><span class="cq-live">● Probíhá</span><h4>${esc(q.name)}</h4>${q.desc ? `<p>${esc(q.desc)}</p>` : ''}</div>
             <div class="cq-time"><small>Zbývá</small><b>${leftTxt(q.end)}</b></div></div>
-          ${q.objectives.map((o) => { const p = o.goal ? Math.min(100, (o.done / o.goal) * 100) : 0; return `<div class="cq-obj"><span>${esc(o.desc || 'Cíl')}</span><em>${num(o.done)} / ${num(o.goal)}</em><div class="bd-bar cq-bar"><span style="width:${p}%"></span></div></div>`; }).join('')}
+          ${q.objectives.map((o) => { const p = o.goal ? Math.min(100, (o.done / o.goal) * 100) : 0; return `<div class="cq-obj"><span>${esc(CQT[o.desc] || o.desc || 'Cíl')}</span><em>${num(o.done)} / ${num(o.goal)}</em><div class="bd-bar cq-bar"><span style="width:${p}%"></span></div></div>`; }).join('')}
           <div class="cq-meta"><b>${pc} %</b> splněno · zapojilo se <b>${num(q.count)}</b> hráčů</div>
           ${q.top.length ? `<div class="cq-top10">${q.top.map((p, i) => `<button type="button" class="cq-pl${i < 3 ? ' cq-p' + (i + 1) : ''}" data-hr="${esc(p.name)}"><span>${i + 1}.</span><img src="${head(p.name, 32)}" alt="" loading="lazy"><b>${esc(p.name)}</b><em>${num(p.amount)}</em></button>`).join('')}</div>` : ''}
         </div>`;

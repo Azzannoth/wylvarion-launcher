@@ -44,7 +44,7 @@ if ($action === 'stats') {
 
 if ($action === 'cquests') {
     $saved = (int)($in['saved'] ?? time());
-    $clean = fn($v, $n = 120) => mb_substr(trim(preg_replace('/\s+/u', ' ', strip_tags((string)$v))), 0, $n);
+    $clean = fn($v, $n = 120) => mb_substr(trim(preg_replace(['/[&§]#?[0-9a-fk-orx]/iu', '/\s+/u'], ['', ' '], strip_tags((string)$v))), 0, $n);
     $quests = [];
     foreach (array_slice(is_array($in['quests'] ?? null) ? $in['quests'] : [], 0, 10) as $q) {
         $id = preg_replace('/[^A-Za-z0-9_-]/', '', (string)($q['id'] ?? ''));
