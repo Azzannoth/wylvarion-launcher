@@ -54,6 +54,12 @@ function lv_is_wyl(array $s): bool {
     return stripos($s['title'], 'wylvarion') !== false || stripos($s['game'], 'minecraft') !== false;
 }
 
+if (isset($_GET['probe'])) {   // diagnostika: syrová odpověď decapi pro jeden kanál
+    $u = preg_replace('/[^A-Za-z0-9_]/', '', (string)$_GET['probe']);
+    if (!wyl_rate_limit('liveprobe', 20, 600)) wyl_json(429, ['ok' => false]);
+    wyl_json(200, ['ok' => true, 'uptime' => lv_get('https://decapi.me/twitch/uptime/' . $u), 'game' => lv_get('https://decapi.me/twitch/game/' . $u)]);
+}
+
 $state = store_load('live');
 if (($state['at'] ?? 0) < time() - LIVE_TTL) {
     // jen jeden požadavek najednou kontroluje streamy, ostatní dostanou poslední stav
