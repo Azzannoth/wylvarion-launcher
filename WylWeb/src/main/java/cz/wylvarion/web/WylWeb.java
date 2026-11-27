@@ -75,6 +75,7 @@ public class WylWeb extends JavaPlugin implements Listener, CommandExecutor {
         Bukkit.getScheduler().runTaskTimer(this, this::fullSync, 20L * 60 * 60 * 6, 20L * 60 * 60 * 6);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::pollLogins, 20L * 10, 20L * poll);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::communityQuests, 20L * 30, 20L * 180);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::questFileSync, 20L * 45, 20L * 60 * 30);
         getLogger().info("WylWeb zapnutý, web: " + url);
     }
 
@@ -137,7 +138,7 @@ public class WylWeb extends JavaPlugin implements Listener, CommandExecutor {
         b.append(",\"walk\":").append(stat(p, Statistic.WALK_ONE_CM));
         Double money = balance(p);
         if (money != null) b.append(",\"money\":").append(Math.round(money * 100) / 100.0);
-        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) papiStats(p, b);
+        if (online && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) papiStats(p, b); // offline hráče řeší questFileSync
         return b.append("}").toString();
     }
 
@@ -420,6 +421,48 @@ public class WylWeb extends JavaPlugin implements Listener, CommandExecutor {
     private static String strip(String s) {
         if (s == null) return "";
         return s.replaceAll("(?i)[§&]x([§&][0-9a-f]){6}", "").replaceAll("(?i)[§&][0-9a-fk-or]", "").replaceAll("<[^>]{1,30}>", "").trim();
+    }
+
+
+    /** Questy a výpravy všech hráčů (i offline) přímo ze souborů QuestCore a WylVypravy → web. */
+    private void questFileSync() {
+        try {
+            File plugins = getDataFolder().getParentFile();
+            Map<String, int[]> vyp = new HashMap<>();
+            File vd = new File(plugins, "WylVypravy/data");
+            int perRound = 100;
+            File[] vf = vd.listFiles((d, n) -> n.endsWith(".yml"));
+            if (vf != null) for (File f : vf) {
+                org.bukkit.configuration.file.YamlConfiguration y = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(f);
+                int total = (Math.max(1, y.getInt("round", 1)) - 1) * perRound + y.getStringList("completed").size();
+                vyp.put(f.getName().replace(".yml", "").toLowerCase(), new int[]{total});
+            }
+            File qd = new File(plugins, "QuestCore/playerdata");
+            File[] qf = qd.listFiles((d, n) -> n.endsWith(".yml"));
+            if (qf == null) return;
+            StringBuilder b = new StringBuilder("{\"players\":[");
+            boolean first = true; int count = 0;
+            for (File f : qf) {
+                String uuid = f.getName().replace(".yml", "").toLowerCase();
+                int completed = 0; String rank = null;
+                for (String line : Files.readAllLines(f.toPath(), StandardCharsets.UTF_8)) {
+                    if (line.startsWith("completed_quests:")) { try { completed = Integer.parseInt(line.substring(17).trim()); } catch (NumberFormatException ignored) { } }
+                    else if (line.startsWith("current_rank:")) rank = line.substring(13).trim().replace("'", "").replace("\"", "");
+                }
+                int[] v = vyp.get(uuid);
+                if (completed <= 0 && v == null) continue;
+                if (!first) b.append(','); first = false;
+                b.append("{\"uuid\":").append(q(uuid)).append(",\"quests\":").append(completed);
+                if (rank != null && rank.matches("[a-z_]{2,20}")) b.append(",\"qrank\":").append(q(rank));
+                if (v != null) b.append(",\"vyp\":").append(v[0]);
+                b.append('}');
+                if (++count % 400 == 0) { b.append("]}"); post("qsync", b.toString()); b = new StringBuilder("{\"players\":["); first = true; }
+            }
+            b.append("]}");
+            if (!first) post("qsync", b.toString());
+        } catch (Exception ex) {
+            getLogger().warning("Quest sync: " + ex.getMessage());
+        }
     }
 
     private static String q(String s) {
