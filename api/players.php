@@ -70,6 +70,9 @@ const BADGES = [
     'quest500'   => ['Hrdina', 'Splněno 500 questů', '🛡', 'r'],
     'quest1000'  => ['Prastarý', 'Splněno 1000 questů – odemčené Výpravy Prastarých', '✦', 'e'],
     'quest2500'  => ['Mýtus', 'Splněno 2500 questů', '🌠', 'l'],
+    'cq1'        => ['Pomocná ruka', 'Přispěl do komunitního questu', '🤝', 'c'],
+    'cq10'       => ['Duše komunity', 'Přispěl do 10 komunitních questů', '💞', 'e'],
+    'cq5000'     => ['Tahoun komunity', 'Celkem 5000 bodů v komunitních questech', '🏗️', 'l'],
     'vyp1'       => ['Na výpravě', 'První splněná Výprava Prastarých', '🧳', 'r'],
     'vyp25'      => ['Průzkumník věků', '25 splněných Výprav Prastarých', '🔮', 'e'],
     'vyp100'     => ['Strážce věků', 'Dokončeno celé kolo (100) Výprav Prastarých', '🌌', 'l'],
@@ -85,15 +88,29 @@ const BADGE_GOALS = [
     'walk100' => ['km', 100], 'traveler' => ['km', 1000], 'walk5000' => ['km', 5000], 'walk20000' => ['km', 20000],
     'money100k' => ['money', 100000], 'money1m' => ['money', 1000000],
     'quest10' => ['quests', 10], 'quest100' => ['quests', 100], 'quest500' => ['quests', 500], 'quest1000' => ['quests', 1000], 'quest2500' => ['quests', 2500],
+    'cq1' => ['cqn', 1], 'cq10' => ['cqn', 10], 'cq5000' => ['cq', 5000],
     'vyp1' => ['vyp', 1], 'vyp25' => ['vyp', 25], 'vyp100' => ['vyp', 100],
 ];
 const BADGE_RANK = ['l' => 4, 'e' => 3, 'r' => 2, 'c' => 1];
 
+/** příspěvky do komunitních questů: uuid => [amount, quests] */
+function pl_cq(): array {
+    static $t = null;
+    if ($t !== null) return $t;
+    $t = [];
+    foreach (store_load('cqhist') as $h) foreach ($h['players'] ?? [] as $uuid => $p) {
+        if (($p['amount'] ?? 0) <= 0) continue;
+        $t[$uuid]['amount'] = ($t[$uuid]['amount'] ?? 0) + $p['amount'];
+        $t[$uuid]['quests'] = ($t[$uuid]['quests'] ?? 0) + 1;
+    }
+    return $t;
+}
 function pl_metric(?array $p, string $m, array $ctx): float {
     if (!$p && $m !== 'votes') return 0;
     if ($m === 'hours') return pl_hours($p);
     if ($m === 'km') return ($p['walk'] ?? 0) / 100000;
     if ($m === 'votes') return (float)($ctx['votes']['total'] ?? 0);
+    if ($m === 'cq' || $m === 'cqn') { $c = pl_cq()[strtolower($p['uuid'] ?? '')] ?? null; return (float)($c ? ($m === 'cq' ? $c['amount'] : $c['quests']) : 0); }
     return (float)($p[$m] ?? 0);
 }
 /** Spočítá odznaky hráče. $ctx: team, sponsor, votes, pun, tier, tops (pole uuid -> [rich, topplay, ...]) */
@@ -309,6 +326,7 @@ wyl_json(200, [
         'money' => $p['money'] ?? null, 'kills' => $p['kills'] ?? null, 'deaths' => $p['deaths'] ?? null,
         'mobs' => $p['mobs'] ?? null, 'fish' => $p['fish'] ?? null, 'km' => isset($p['walk']) ? round($p['walk'] / 100000, 1) : null,
         'quests' => $p['quests'] ?? null, 'qrank' => $p['qrank'] ?? null, 'vyp' => $p['vyp'] ?? null,
+        'cq' => (int)round(pl_cq()[strtolower($p['uuid'] ?? '')]['amount'] ?? 0), 'cqn' => pl_cq()[strtolower($p['uuid'] ?? '')]['quests'] ?? 0,
     ] : null,
     'votes' => $votes,
     'team' => $team[$key] ?? null,

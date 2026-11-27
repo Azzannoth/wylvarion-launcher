@@ -68,9 +68,42 @@
       <span class="cm-head"><img src="${head(p.name, 64)}" alt="" loading="lazy">${p.online ? '<i class="cm-dot" title="Online"></i>' : ''}</span>
       <span class="cm-pmain"><b>${esc(p.name)}</b><small>${extra(p)}</small>${bdgMini(p)}</span>
     </button>`;
+  /* =================== KOMUNITNÍ QUESTY =================== */
+  function leftTxt(end) {
+    const s = end - Date.now() / 1000;
+    if (s <= 0) return 'končí';
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    return d ? `${d} d ${h} h` : h ? `${h} h ${m} min` : `${m} min`;
+  }
+  async function cqRender() {
+    const box = $('#hrHome');
+    if (!box) return;
+    let el = $('#cqBox');
+    if (!el) { el = document.createElement('div'); el.id = 'cqBox'; box.parentNode.insertBefore(el, box); }
+    try {
+      const d = await getJSON(`${API}/cquests.php`);
+      if (!d.connected || (!d.active.length && !d.past.length)) { el.innerHTML = ''; return; }
+      const act = d.active.map((q) => {
+        const goal = q.objectives.reduce((a, o) => a + o.goal, 0), done = q.objectives.reduce((a, o) => a + Math.min(o.done, o.goal), 0);
+        const pc = goal ? Math.min(100, Math.round((done / goal) * 100)) : 0;
+        return `<div class="cq-card">
+          <div class="cq-top"><div><span class="cq-live">● Probíhá</span><h4>${esc(q.name)}</h4>${q.desc ? `<p>${esc(q.desc)}</p>` : ''}</div>
+            <div class="cq-time"><small>Zbývá</small><b>${leftTxt(q.end)}</b></div></div>
+          ${q.objectives.map((o) => { const p = o.goal ? Math.min(100, (o.done / o.goal) * 100) : 0; return `<div class="cq-obj"><span>${esc(o.desc || 'Cíl')}</span><em>${num(o.done)} / ${num(o.goal)}</em><div class="bd-bar cq-bar"><span style="width:${p}%"></span></div></div>`; }).join('')}
+          <div class="cq-meta"><b>${pc} %</b> splněno · zapojilo se <b>${num(q.count)}</b> hráčů</div>
+          ${q.top.length ? `<div class="cq-top10">${q.top.map((p, i) => `<button type="button" class="cq-pl${i < 3 ? ' cq-p' + (i + 1) : ''}" data-hr="${esc(p.name)}"><span>${i + 1}.</span><img src="${head(p.name, 32)}" alt="" loading="lazy"><b>${esc(p.name)}</b><em>${num(p.amount)}</em></button>`).join('')}</div>` : ''}
+        </div>`;
+      }).join('');
+      const past = d.past.length ? `<div class="cq-past"><small>Poslední komunitní questy</small>${d.past.map((h) => `<span><b>${esc(h.name)}</b> ${h.goal && h.done >= h.goal ? '✅ splněno' : `${num(h.goal ? Math.round((h.done / h.goal) * 100) : 0)} %`} · ${num(h.count)} hráčů${h.best ? ` · nejvíc <button type="button" class="linkish" data-hr="${esc(h.best)}">${esc(h.best)}</button>` : ''}</span>`).join('')}</div>` : '';
+      el.innerHTML = `<div class="cm-block cq-wrap"><h3>🤝 Komunitní questy <em>${num(d.stats.players)} hráčů přispělo · ${num(d.stats.quests)} questů</em></h3>
+        ${act || '<div class="cm-empty small">Teď neběží žádný komunitní quest. Sleduj chat na serveru!</div>'}${past}
+        <p class="cm-note">Do komunitních questů přispívá celý server dohromady – na serveru napiš <b>/cq</b>. Data se aktualizují zhruba každých pár minut.</p></div>`;
+    } catch (e) { el.innerHTML = ''; }
+  }
   async function hrHome() {
     const box = $('#hrHome');
     if (!box) return;
+    cqRender();
     box.innerHTML = '<div class="wp-loading">Načítám hráče…</div>';
     try {
       const d = await getJSON(`${API}/players.php?home=1`);
@@ -146,6 +179,7 @@
       card('🎣', 'Chycené ryby', num(s.fish), ''),
       card('🧭', 'Nachozeno', s.km != null ? `${num(s.km, 1)} km` : '–', ''),
       card('📜', 'Splněné questy', s.quests != null ? num(s.quests) : '–', s.qrank ? `rank ${esc(s.qrank.toUpperCase())}` : ''),
+      card('🤝', 'Komunitní questy', s.cq != null ? num(s.cq) : '–', s.cqn ? `bodů · ${num(s.cqn)} questů` : 'zatím bez příspěvku'),
       card('✦', 'Výpravy Prastarých', s.vyp != null ? num(s.vyp) : '–', (s.quests || 0) >= 1000 ? 'odemčeno' : 'odemkne se po 1000 questech'),
     ].join('') : `<div class="cm-empty small" style="grid-column:1/-1">Statistiky tohoto hráče zatím nemáme.</div>`;
     const got = p.badges.filter((b) => b.has).length;
@@ -222,6 +256,7 @@
     { id: 'mobs', label: '🐉 Zabití mobů', fmt: (v) => `${num(v)} mobů`, title: 'Největší lovci' },
     { id: 'fish', label: '🎣 Rybaření', fmt: (v) => `${num(v)} ryb`, title: 'Nejlepší rybáři' },
     { id: 'quests', label: '📜 Questy', fmt: (v) => `${num(v)} questů`, title: 'Nejvíc splněných questů' },
+    { id: 'cq', url: 'cquests.php?top=1', label: '🤝 Komunita', fmt: (v) => `${num(v)} bodů`, title: 'Největší přispěvatelé do komunitních questů' },
     { id: 'badges', label: '🏅 Odznaky', fmt: (v) => `${num(v)} odznaků`, title: 'Největší sběratelé odznaků' },
     { id: 'vyp', label: '✦ Výpravy', fmt: (v) => `${num(v)} výprav`, title: 'Nejvíc splněných Výprav Prastarých' },
   ];
@@ -234,7 +269,7 @@
     const box = $('#slMount');
     box.innerHTML = '<div class="wp-loading">Načítám žebříček…</div>';
     try {
-      const d = await getJSON(`${API}/players.php?top=${slCur}`);
+      const d = await getJSON(`${API}/${def.url || `players.php?top=${slCur}`}`);
       if (!d.top.length) {
         box.innerHTML = `<div class="cm-empty"><b>${d.connected === false ? 'Žebříčky se právě propojují se serverem.' : 'Zatím tu nikdo není.'}</b><span>${d.connected === false ? 'Jakmile server pošle statistiky, objeví se tu nejlepší hráči.' : ''}</span></div>`;
         return;

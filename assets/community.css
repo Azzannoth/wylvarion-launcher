@@ -419,3 +419,29 @@
 .frame-collector{border-color:#fbbf24 !important;box-shadow:0 0 0 4px rgba(251,191,36,.2),0 0 40px -2px #fbbf24;animation:pfGlow 3s ease-in-out infinite;}
 .frame-mythic{border-color:#22d3ee !important;box-shadow:0 0 0 4px rgba(34,211,238,.2),0 0 40px -2px #a855f7;animation:pfGlow 2.4s ease-in-out infinite;}
 @media (max-width:600px){.pf-badges{grid-template-columns:repeat(2,1fr);}}
+
+/* ===== Komunitní questy ===== */
+.cq-wrap h3 em{font-style:normal;font-size:13px;color:var(--parchment-dim);font-weight:700;margin-left:8px;}
+.cq-card{padding:18px;border-radius:18px;margin-bottom:12px;background:linear-gradient(160deg,rgba(52,211,153,.12),transparent 60%),var(--stone);border:1px solid rgba(52,211,153,.3);--bd:#34d399;}
+.cq-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;}
+.cq-top h4{margin:4px 0;font-size:20px;color:#fff;}
+.cq-top p{margin:0;color:var(--parchment-dim);font-size:13.5px;}
+.cq-live{font-size:11.5px;font-weight:800;color:#34d399;letter-spacing:.05em;text-transform:uppercase;}
+.cq-time{text-align:right;flex-shrink:0;}
+.cq-time small{display:block;color:var(--parchment-dim);font-size:11.5px;font-weight:700;}
+.cq-time b{color:#fff;font-size:18px;}
+.cq-obj{display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin-top:12px;font-size:13.5px;color:#fff;font-weight:700;}
+.cq-obj em{font-style:normal;color:#34d399;}
+.cq-bar{grid-column:1/-1;height:10px;}
+.cq-meta{margin-top:10px;font-size:13px;color:var(--parchment-dim);}
+.cq-meta b{color:#fff;}
+.cq-top10{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px;margin-top:12px;}
+.cq-pl{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid var(--line);color:#fff;font:inherit;font-size:13px;cursor:pointer;text-align:left;}
+.cq-pl span{color:var(--parchment-dim);font-weight:800;width:22px;}
+.cq-pl img{width:22px;height:22px;border-radius:5px;image-rendering:pixelated;}
+.cq-pl b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cq-pl em{font-style:normal;color:#34d399;font-weight:800;}
+.cq-p1{border-color:#fbbf24;}.cq-p2{border-color:#cbd5e1;}.cq-p3{border-color:#d97706;}
+.cq-past{display:flex;flex-direction:column;gap:4px;margin-top:6px;font-size:13px;color:var(--parchment-dim);}
+.cq-past small{font-weight:800;color:#fff;}
+.cq-past b{color:#fff;}
