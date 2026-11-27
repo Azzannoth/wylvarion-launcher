@@ -538,3 +538,11 @@
 .xmas .brand-name{background:linear-gradient(90deg,#fff,#fca5a5 45%,#fff 55%,#86efac);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .hs-timer.xmas{border-color:rgba(239,68,68,.55) !important;background:radial-gradient(circle at 100% 0,rgba(34,197,94,.18),transparent 60%),radial-gradient(circle at 0 100%,rgba(239,68,68,.2),transparent 60%),var(--stone) !important;}
 .hs-timer.xmas .hs-left{color:#fca5a5;}
+
+/* ===== Kód tvůrce ===== */
+.in-creator .in-code{font-size:11.5px;font-weight:800;color:#fde68a;background:rgba(251,191,36,.12);border:1px dashed rgba(251,191,36,.5);padding:3px 9px;border-radius:8px;cursor:copy;}
+.checkout-creator{display:flex;flex-direction:column;gap:6px;margin:12px 0 4px;}
+.checkout-creator label{font-weight:700;font-size:13.5px;color:#fff;}
+.checkout-creator label small{color:var(--parchment-dim);font-weight:600;}
+.checkout-creator input{padding:10px 12px;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12));background:rgba(0,0,0,.3);color:#fff;font:600 14px inherit;text-transform:uppercase;letter-spacing:.05em;outline:0;}
+.checkout-creator input:focus{border-color:rgba(192,132,252,.6);}

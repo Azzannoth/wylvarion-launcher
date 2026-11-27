@@ -489,6 +489,7 @@
           <img src="https://mc-heads.net/body/${encodeURIComponent(c.nick)}/140" alt="" loading="lazy"><b>${esc(c.nick)}</b><span>${esc(t.name || 'Tvůrce')}</span>
           <em class="in-rate">★ Ohodnotit</em>
           <a class="in-plink" href="#hraci/${encodeURIComponent(c.nick)}" data-hr="${esc(c.nick)}">👤 Profil hráče</a>
+          ${c.code ? `<a class="in-code" data-copy="${esc(c.code)}" title="Kliknutím zkopíruješ – zadej ho při nákupu v obchodě">🎟️ Kód: ${esc(c.code)}</a>` : ''}
           ${(c.links && c.links.length) ? `<span class="in-clinks">${c.links.map((l) => `<a class="in-clink" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)} ↗</a>`).join('')}</span>` : (c.url ? `<a class="in-clink" href="${esc(c.url)}" target="_blank" rel="noopener">Kanál ↗</a>` : '')}
         </div>`; }).join('')}</div>
         <p class="cm-note">Líbí se ti obsah některého tvůrce? Klikni na jeho kartu a ohodnoť ho hvězdičkami (přihlášení přes Discord).</p>`
@@ -1194,7 +1195,20 @@
     tick(); setInterval(tick, 1000);
   }
 
+  /* ---------- kód tvůrce v obchodě: odkaz ?kod=MAYO si pamatujeme ---------- */
+  function creatorCodePrefill() {
+    try {
+      const m = location.search.match(/[?&]kod=([A-Za-z0-9_]{2,20})/);
+      if (m) localStorage.setItem('wylCreatorCode', m[1].toUpperCase());
+      const v = localStorage.getItem('wylCreatorCode');
+      const inp = document.getElementById('checkoutCreator');
+      if (inp && v && !inp.value) inp.value = v;
+      inp?.addEventListener('change', () => { try { localStorage.setItem('wylCreatorCode', inp.value.trim().toUpperCase()); } catch (e) { /* nic */ } });
+    } catch (e) { /* localStorage nemusí jít */ }
+  }
+
   function start() {
+    creatorCodePrefill();
     watchInfluencer();
     liveLoad();
     setInterval(liveLoad, 120000);
