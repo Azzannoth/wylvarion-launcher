@@ -481,6 +481,9 @@
     const li = (arr) => arr.map((r) => `<li>${esc(r)}</li>`).join('');
     box.innerHTML = `
       ${I.highlight ? `<div class="in-god"><div class="in-god-ic">👑</div><div><b>${esc(I.highlight.title)}</b><span>${esc(I.highlight.text)}</span></div></div>` : ''}
+      ${I.ladder ? `<div class="in-ladder"><h3 class="sl-title">Postup tvůrce</h3><div class="in-lsteps">${I.ladder.map((l, k) => `
+        <div class="in-lstep" style="--c:${esc(l.color || '#a855f7')}"><span class="in-lnum">${k + 1}</span><div class="in-lic">${l.icon}</div><b>${esc(l.name)}</b><em>${esc(l.when)}</em><p>${esc(l.text)}</p></div>${k < I.ladder.length - 1 ? '<span class="in-larrow">➜</span>' : ''}`).join('')}</div>
+        <p class="cm-note">O povýšení na CELESTIAL a ETERNAL rozhoduje admin team podle toho, jak dlouho a jak kvalitně tvoříš. Není to nárok, ale odměna za snahu.</p></div>` : ''}
       <div class="in-hero"><div><b>Jak zažádat o rank tvůrce</b><span>Vyber si, co děláš, splň podmínky a pošli žádost o spolupráci přímo tady na webu. Stačí být na našem Discordu – role Člen není potřeba.</span></div>
         <button type="button" class="wb-btn" data-sp-open>Podat žádost o spolupráci</button></div>
       ${I.common_req ? `<div class="in-common">

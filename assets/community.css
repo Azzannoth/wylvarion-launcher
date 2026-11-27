@@ -460,3 +460,18 @@
   color:#111;background:var(--crew-color);box-shadow:0 0 14px -2px var(--crew-color);}
 @keyframes crewHl{0%,100%{box-shadow:0 0 0 1px color-mix(in srgb,var(--crew-color) 40%,transparent),0 0 30px -8px var(--crew-color);}50%{box-shadow:0 0 0 1px var(--crew-color),0 0 40px -4px var(--crew-color);}}
 @media (prefers-reduced-motion:reduce){.crew-card.is-hl{animation:none;}}
+
+/* ===== Influencer: postup tvůrce ===== */
+.in-ladder{margin:22px 0;}
+.in-lsteps{display:flex;align-items:stretch;gap:10px;}
+.in-lstep{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:20px 14px 16px;border-radius:18px;
+  background:radial-gradient(circle at 50% 0%,color-mix(in srgb,var(--c) 26%,transparent),transparent 70%),var(--stone);border:1px solid color-mix(in srgb,var(--c) 55%,transparent);
+  box-shadow:0 10px 30px -16px var(--c);}
+.in-lstep:last-of-type{border-width:2px;box-shadow:0 0 34px -8px var(--c);}
+.in-lnum{position:absolute;top:10px;left:12px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#111;background:var(--c);}
+.in-lic{font-size:36px;line-height:1.1;filter:drop-shadow(0 0 10px var(--c));}
+.in-lstep b{color:#fff;font-size:16px;}
+.in-lstep em{font-style:normal;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--c);}
+.in-lstep p{margin:4px 0 0;color:var(--parchment-dim);font-size:13px;line-height:1.45;}
+.in-larrow{align-self:center;color:var(--parchment-dim);font-size:22px;}
+@media (max-width:760px){.in-lsteps{flex-direction:column;}.in-larrow{transform:rotate(90deg);}}
